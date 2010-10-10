@@ -39,7 +39,7 @@
    NAME, sorted by preference."))
 
 (defgeneric find-releases-named (name)
-  (:Documentation
+  (:documentation
    "Return a list of all releases in all enabled dists with the given
    NAME, sorted by preference."))
 
@@ -265,14 +265,19 @@
                  (eql (char line 0) #\#))))
     (ignorable line)))
 
+(defun symbol-case (string)
+  (if (upper-case-p (char (string '#:foo) 0))
+      (string-upcase string)
+      string))
+
 (defun config-file-initargs (file)
   (let ((initargs '()))
     (for-each-line (line file)
       (unless (ignorable-line line)
         (destructure-line (initarg value)
             line
-          (let ((keyword (intern (string-upcase (string-right-trim '(#\:)
-                                                                   initarg))
+          (let ((keyword (intern (symbol-case (string-right-trim '(#\:)
+                                                                 initarg))
                                  :keyword)))
             (push value initargs)
             (push keyword initargs)))))
