@@ -36,6 +36,9 @@
   (:implementation abcl
     ".abclrc")
   (:implementation ccl
+    #+win32
+    "ccl-init.lisp"
+    #-win32
     ".ccl-init.lisp")
   (:implementation clisp
     ".clisprc.lisp")
