@@ -76,9 +76,10 @@
   (format stream "~%~v@T;;; The following lines added by ql:add-to-init-file:~%"
           indentation)
   (format stream "~v@T#-quicklisp~%" indentation)
-  (format stream "~v@T(let ((quicklisp-init ~(~S~)))~%"
-          indentation
-          (quicklisp-init-file-form))
+  (let ((*print-case* :downcase))
+    (format stream "~v@T(let ((quicklisp-init ~S))~%"
+            indentation
+            (quicklisp-init-file-form)))
   (format stream "~v@T  (when (probe-file quicklisp-init)~%" indentation)
   (format stream "~v@T    (load quicklisp-init)))~%~%" indentation))
 
