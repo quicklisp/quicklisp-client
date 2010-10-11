@@ -39,7 +39,7 @@
    NAME, sorted by preference."))
 
 (defgeneric find-releases-named (name)
-  (:Documentation
+  (:documentation
    "Return a list of all releases in all enabled dists with the given
    NAME, sorted by preference."))
 
@@ -266,17 +266,20 @@
     (ignorable line)))
 
 (defun config-file-initargs (file)
-  (let ((initargs '()))
-    (for-each-line (line file)
-      (unless (ignorable-line line)
-        (destructure-line (initarg value)
-            line
-          (let ((keyword (intern (string-upcase (string-right-trim '(#\:)
-                                                                   initarg))
-                                 :keyword)))
-            (push value initargs)
-            (push keyword initargs)))))
-    initargs))
+  (flet ((initarg-keyword (string)
+           ;; A concession to mlisp
+           (or (find-symbol string 'keyword)
+               (find-symbol (string-upcase string) 'keyword)
+               (error "Unknown config file option ~S" string))))
+    (let ((initargs '()))
+      (for-each-line (line file)
+        (unless (ignorable-line line)
+          (destructure-line (initarg value)
+              line
+            (let ((keyword (initarg-keyword (string-right-trim ":" initarg))))
+              (push value initargs)
+              (push keyword initargs)))))
+      initargs)))
 
 ;;;
 ;;; A few generic things
