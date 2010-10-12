@@ -279,7 +279,12 @@
 
 (declaim (inline bit-stream-read-bits))
 (defun bit-stream-read-bits (stream bits)
-  (declare (type bit-stream stream) (type (unsigned-byte 8) bits))
+  (declare (type bit-stream stream)
+           ;; [quicklisp-added]
+           ;; FIXME: This might be fixed soon in ECL.
+           ;; http://article.gmane.org/gmane.lisp.ecl.general/7659
+           #-ecl
+           (type (unsigned-byte 8) bits))
   "Read single or multiple bits from the given bit-stream."
   (loop while (< (bit-stream-bit-count stream) bits)
         do
