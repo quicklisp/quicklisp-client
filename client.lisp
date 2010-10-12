@@ -46,4 +46,4 @@
       (update-dist old :prompt prompt))))
 
 (defun help ()
-  "For help with this demo, see http://www.quicklisp.org/demo/")
+  "For help with Quicklisp, see http://www.quicklisp.org/beta/")
