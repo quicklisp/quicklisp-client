@@ -84,15 +84,20 @@
   (format stream "~v@T    (load quicklisp-init)))~%~%" indentation))
 
 (defun suitable-lisp-init-file (implementation)
-  "Return the name of IMPLEMENTATION's init file."
-  (if implementation
-      (init-file-name-for implementation)
-      (init-file-name)))
+  "Return the name of IMPLEMENTATION's init file. If IMPLEMENTAION is
+a string or pathname, return its merged pathname instead."
+  (etypecase implementation
+    ((or string pathname)
+     (merge-pathnames implementation))
+    ((or null (eql t))
+     (init-file-name))
+    (t
+     (init-file-name-for implementation))))
 
-(defun add-to-init-file (&optional implementation)
+(defun add-to-init-file (&optional implementation-or-file)
   "Add forms to the Lisp implementation's init file that will load
 quicklisp at CL startup."
-  (let ((init-file (suitable-lisp-init-file implementation)))
+  (let ((init-file (suitable-lisp-init-file implementation-or-file)))
     (unless init-file
       (error "Don't know how to add to init file for your implementation."))
     (setf init-file (merge-pathnames init-file (user-homedir-pathname)))
