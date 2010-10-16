@@ -329,7 +329,30 @@
                        port
                        path))
 
+(defun user-agent-string ()
+  "Return a string suitable for using as the User-Agent value in HTTP
+requests. Includes Quicklisp version and CL implementation and version
+information."
+  (labels ((requires-encoding (char)
+             (not (or (alphanumericp char)
+                      (member char '(#\. #\- #\_)))))
+           (encode (string)
+             (substitute-if #\_ #'requires-encoding string))
+           (version-string (string)
+             (if string
+                 (let* ((length (length string))
+                        (space (or (position #\Space string) length))
+                        (limit (min space length 16)))
+                   (encode (subseq string 0 limit)))
+                 "unknown")))
+    ;; FIXME: Be more configurable, and take/set the version from
+    ;; somewhere else.
+    (format nil "quicklisp-client/20101015 ~A/~A"
+            (encode (lisp-implementation-type))
+            (version-string (lisp-implementation-version)))))
+
 (defun make-request-buffer (host port path &key (method "GET"))
+  "Return an octet vector suitable for sending as an HTTP 1.1 request."
   (setf method (string method))
   (when *proxy-url*
     (setf path (full-proxy-path host port path)))
@@ -341,9 +364,7 @@
       (add-line "Host: " host (if (= port 80) ""
                                   (format nil ":~D" port)))
       (add-line "Connection: close")
-      ;; FIXME: get the version below from the system object, or
-      ;; version.txt, or something
-      (add-line "User-Agent: quicklisp-client/2010101400")
+      (add-line "User-Agent: " (user-agent-string))
       (add-newline sink)
       (sink-buffer sink))))
 
