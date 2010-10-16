@@ -265,12 +265,19 @@
                  (eql (char line 0) #\#))))
     (ignorable line)))
 
+(defvar *initarg-case-converter*
+  (cond ((string= :string "string")
+         #'string-downcase)
+        ((string= :string "STRING")
+         #'string-upcase)
+        (t
+         (error "Cannot determine default case of symbols."))))
+
 (defun config-file-initargs (file)
   (flet ((initarg-keyword (string)
            ;; A concession to mlisp
-           (or (find-symbol string 'keyword)
-               (find-symbol (string-upcase string) 'keyword)
-               (error "Unknown config file option ~S" string))))
+           (intern (funcall *initarg-case-converter* string)
+                   'keyword)))
     (let ((initargs '()))
       (for-each-line (line file)
         (unless (ignorable-line line)
