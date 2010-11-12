@@ -25,6 +25,9 @@
   (:implementation t
     (rename-file from to)
     (truename to))
+  (:implementation cmucl
+    (rename-file from (string-right-trim "/" (namestring to)))
+    (truename to))
   (:implementation clisp
     (ql-clisp:rename-directory from to)
     (truename to)))
