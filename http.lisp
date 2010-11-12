@@ -341,9 +341,12 @@ information."
            (version-string (string)
              (if string
                  (let* ((length (length string))
-                        (space (or (position #\Space string) length))
-                        (limit (min space length 16)))
-                   (encode (subseq string 0 limit)))
+                        (start (or (position-if #'digit-char-p string)
+                                   0))
+                        (space (or (position #\Space string :start start)
+                                   length))
+                        (limit (min space length (+ start 24))))
+                   (encode (subseq string start limit)))
                  "unknown")))
     ;; FIXME: Be more configurable, and take/set the version from
     ;; somewhere else.
