@@ -114,8 +114,7 @@
                         (setf output-so-far length))
                        (t
                         (write-string string)
-                        (setf output-so-far new-output))
-                   (finish-line)))
+                        (setf output-so-far new-output))))
                (finish-output))
              (show-package (name)
                ;; Only show package markers when compiling. Showing
