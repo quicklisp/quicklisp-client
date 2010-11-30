@@ -73,11 +73,6 @@
                                   :no-hang nil
                                   :interactive t)))
 
-(defimplementation (read-octets :for lispworks :qualifier :before)
-    (buffer connection)
-  (declare (ignore buffer))
-  (ql-lispworks:wait-for-input-streams (list connection)))
-
 (definterface write-octets (buffer connection)
   (:implementation t
     (write-sequence buffer connection)

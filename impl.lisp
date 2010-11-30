@@ -176,9 +176,7 @@
                   #:delete-directory)
   (:reexport-from #:comm
                   #:open-tcp-stream
-                  #:get-host-entry)
-  (:reexport-from #:system
-                  #:wait-for-input-streams))
+                  #:get-host-entry))
 
 
 ;;; ECL
