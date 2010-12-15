@@ -25,6 +25,12 @@
             (ql)
             (call-with-quiet-compilation #'ql))))))
 
+(defmethod quickload :around (systems &key verbose prompt explain
+                                      &allow-other-keys)
+  (declare (ignorable systems verbose prompt explain))
+  (with-consistent-dists
+    (call-next-method)))
+
 (defun system-list ()
   (provided-systems t))
 
