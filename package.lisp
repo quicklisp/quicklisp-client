@@ -44,7 +44,8 @@
   (:export #:call-with-quiet-compilation
            #:add-to-init-file
            #:rename-directory
-           #:delete-directory))
+           #:delete-directory
+           #:delete-directory-tree))
 
 (defpackage #:ql-network
   (:use #:cl #:ql-impl)

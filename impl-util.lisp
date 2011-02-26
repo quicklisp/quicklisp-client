@@ -117,3 +117,85 @@ quicklisp at CL startup."
 
 
 
+;;;
+;;; Deleting a directory tree
+;;;
+
+(defvar *wild-entry* (make-pathname :name :wild
+                                    :type :wild
+                                    :version :wild))
+
+(defvar *wild-relative* (make-pathname :directory '(:relative :wild)))
+
+(defun wild-all-entries (directory)
+  (directory (merge-pathnames *wild-entry* directory)))
+
+(defun clisp-style-directory-entries (directory)
+  (nconc (wild-all-entries directory)
+         (directory (merge-pathnames *wild-relative* directory))))
+
+(definterface directory-entries (directory)
+  (:documentation "Return all directory entries of DIRECTORY as a
+  list, or NIL if there are no directory entries. Excludes the \".\"
+  and \"..\" entries.")
+  (:implementation t
+     ;; Argh. I hate #+/#-, but without it SBCL gives a full warning
+     ;; about unknown keyword arguments to DIRECTORY in 1.0.46 and
+     ;; older.
+     (directory (merge-pathnames *wild-entry* directory)
+                #+ccl :directories #+ccl t
+                ))
+  (:implementation (clisp ecl)
+     (clisp-style-directory-entries directory)))
+
+(definterface directoryp (entry)
+  (:documentation "Return true if ENTRY refers to a directory.")
+  (:implementation t
+     (not (or (pathname-name entry)
+              (pathname-type entry)
+              (pathname-version entry))))
+  (:implementation allegro
+     (ql-allegro:file-directory-p entry))
+  (:implementation ecl
+     (eql (ql-ecl:file-kind entry nil) :directory))
+  (:implementation lispworks
+     (ql-lispworks:file-directory-p entry)))
+
+(definterface delete-directory (entry)
+  (:documentation "Delete the directory ENTRY. Might signal an error
+  if it is not an empty directory.")
+  (:implementation t
+     (delete-file entry))
+  (:implementation allegro
+     (ql-allegro:delete-directory entry))
+  (:implementation ccl
+     (ql-ccl:delete-directory entry))
+  (:implementation clisp
+     (ql-clisp:delete-dir entry ))
+  (:implementation cmucl
+     (ql-cmucl:unix-rmdir entry))
+  (:implementation ecl
+     (ql-ecl:rmdir entry))
+  (:implementation lispworks
+     (ql-lispworks:delete-directory entry))
+  (:implementation sbcl
+     (ql-sbcl:rmdir entry)))
+
+(definterface delete-directory-tree (pathname)
+  (:documentation "Delete the directory tree rooted at PATHNAME.")
+  (:implementation t
+     (let ((directories-to-process (list (truename pathname)))
+           (directories-to-delete '()))
+         (loop
+           (unless directories-to-process
+             (return))
+           (let* ((current (pop directories-to-process))
+                  (entries (directory-entries current)))
+             (push current directories-to-delete)
+             (dolist (entry entries)
+               (if (directoryp entry)
+                   (push entry directories-to-process)
+                   (delete-file entry)))))
+         (map nil 'delete-directory directories-to-delete)))
+  (:implementation allegro
+     (ql-allegro:delete-directory-and-files pathname)))

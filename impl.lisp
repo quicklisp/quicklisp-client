@@ -74,10 +74,14 @@
         `(progn
            (defgeneric ,generic-name (lisp ,@lambda-list)
              ,@gf-options
-             ,@(mapcar (lambda (implementation)
+             ,@(mapcan (lambda (implementation)
                          (destructuring-bind (class &rest body)
                              (rest implementation)
-                           (method-option class body)))
+                           (mapcar (lambda (class)
+                                     (method-option class body))
+                                   (if (consp class)
+                                       class
+                                       (list class)))))
                        implementations))
            (defun ,name ,lambda-list
              (,generic-name *implementation* ,@lambda-list)))))))
@@ -113,7 +117,9 @@
   (:reexport-from #:socket
                   #:make-socket)
   (:reexport-from #:excl
+                  #:file-directory-p
                   #:delete-directory
+                  #:delete-directory-and-files
                   #:read-vector))
 
 
@@ -134,6 +140,7 @@
    "Clozure Common Lisp - http://www.clozure.com/clozurecl.html")
   (:class ccl)
   (:reexport-from #:ccl
+                  #:delete-directory
                   #:make-socket))
 
 ;;; GNU CLISP
@@ -173,6 +180,7 @@
   (:prep
    (require "comm"))
   (:reexport-from #:lw
+                  #:file-directory-p
                   #:delete-directory)
   (:reexport-from #:comm
                   #:open-tcp-stream
@@ -188,7 +196,8 @@
    (require 'sockets))
   (:intern #:host-network-address)
   (:reexport-from #:si
-                  #:rmdir)
+                  #:rmdir
+                  #:file-kind)
   (:reexport-from #:sb-bsd-sockets
                   #:get-host-by-name
                   #:host-ent-address
