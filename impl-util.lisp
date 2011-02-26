@@ -171,9 +171,9 @@ quicklisp at CL startup."
   (:implementation ccl
      (ql-ccl:delete-directory entry))
   (:implementation clisp
-     (ql-clisp:delete-dir entry ))
+     (ql-clisp:delete-dir entry))
   (:implementation cmucl
-     (ql-cmucl:unix-rmdir entry))
+     (ql-cmucl:unix-rmdir (namestring entry)))
   (:implementation ecl
      (ql-ecl:rmdir entry))
   (:implementation lispworks
