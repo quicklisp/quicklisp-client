@@ -156,8 +156,6 @@ quicklisp at CL startup."
               (pathname-version entry))))
   (:implementation allegro
      (ql-allegro:file-directory-p entry))
-  (:implementation ecl
-     (eql (ql-ecl:file-kind entry nil) :directory))
   (:implementation lispworks
      (ql-lispworks:file-directory-p entry)))
 
