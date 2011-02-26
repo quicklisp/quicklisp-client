@@ -181,7 +181,8 @@
   (:export #:standard-dist-enumeration-function
            #:*dist-enumeration-functions*
            #:find-asdf-system-file
-           #:system-apropos))
+           #:system-apropos
+           #:dependency-tree))
 
 (defpackage #:quicklisp-client
   (:nicknames #:quicklisp #:ql)
