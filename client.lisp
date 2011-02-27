@@ -43,7 +43,7 @@
            (when (or (not prompt) (press-enter-to-continue))
              (update-in-place dist new)))
           (t
-           (format t "~&No update available for ~S."
+           (format t "~&You already have the latest version of ~S."
                    (short-description dist))))))
 
 (defun update-all-dists (&key (prompt t))
@@ -53,3 +53,13 @@
 
 (defun help ()
   "For help with Quicklisp, see http://www.quicklisp.org/beta/")
+
+(defun uninstall (system-name)
+  (let ((system (find-system system-name)))
+    (when system
+      (ql-dist:uninstall system))))
+
+(defun uninstall-dist (name)
+  (let ((dist (find-dist name)))
+    (when dist
+      (ql-dist:uninstall dist))))

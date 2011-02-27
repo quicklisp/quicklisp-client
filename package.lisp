@@ -190,6 +190,8 @@
            #:*quickload-prompt*
            #:*quickload-verbose*
            #:*quickload-explain*
+           #:uninstall
+           #:uninstall-dist
            #:qmerge
            #:*quicklisp-home*
            #:*initial-dist-url*
@@ -205,6 +207,7 @@
            #:add-to-init-file
            #:use-only-quicklisp-systems
            #:help)
+  (:shadow #:uninstall)
   (:use #:cl
         #:ql-util
         #:ql-impl-util
