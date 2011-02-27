@@ -418,6 +418,12 @@ the given NAME."
   (let ((installed (find-dist (name dist))))
     (equalp (version installed) (version dist))))
 
+(defmethod uninstall ((dist dist))
+  (when (installedp dist)
+    (dolist (system (provided-systems dist))
+      (asdf:clear-system (name system)))
+    (ql-impl-util:delete-directory-tree (base-directory dist))))
+
 
 (defmethod find-release-in-dist (release dist)
   (values (gethash release (release-index dist))))
@@ -584,6 +590,15 @@ the given NAME."
                           stream))))))
     release))
 
+(defmethod uninstall ((release release))
+  (when (installedp release)
+    (dolist (system (installed-systems release))
+      (asdf:clear-system (name system))
+      (delete-file (install-metadata-file system)))
+    (delete-file (install-metadata-file release))
+    (delete-file (local-archive-file release))
+    (ql-impl-util:delete-directory-tree (base-directory release))))
+
 
 (defun call-for-each-index-entry (file fun)
   (labels ((blank-char-p (char)
@@ -740,6 +755,9 @@ the given NAME."
 
 (defmethod installedp ((system system))
   (installed-asdf-system-file system))
+
+(defmethod uninstall ((system system))
+  (uninstall (release system)))
 
 (defun find-asdf-system-file (name)
   (let ((system (find-system name)))
