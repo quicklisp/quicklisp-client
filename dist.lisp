@@ -97,6 +97,51 @@
    "The pathname to a file describing the installation status of
    OBJECT."))
 
+(defgeneric subscription-inhibition-file (object)
+  (:documentation "The file whose presence indicates the inhibited
+  subscription status of OBJECT.")
+  (:method (object)
+    (relative-to object "subscription-inhibited.txt")))
+
+(defgeneric inhibit-subscription (object)
+  (:documentation "Inhibit subscription for OBJECT.")
+  (:method (object)
+    (ensure-file-exists (subscription-inhibition-file object))))
+
+(defgeneric uninhibit-subscription (object)
+  (:documentation "Remove inhibition of subscription for OBJECT.")
+  (:method (object)
+    (delete-file-if-exists (subscription-inhibition-file object))))
+
+(defgeneric subscription-inhibited-p (object)
+  (:documentation "Return T if subscription to OBJECT is inhibited.")
+  (:method (object)
+    (not (not (probe-file (subscription-inhibition-file object))))))
+
+(define-condition subscription-unavailable (error)
+  ((object
+    :initarg :object
+    :reader subscription-unavailable-object)))
+
+(defgeneric subscribedp (object)
+  (:documentation "Return true if OBJECT is subscribed to updates."))
+
+(defgeneric subscribe (object)
+  (:documentation "Subscribe to updates of OBJECT, if possible. If no
+  updates are available, a condition of type SUBSCRIPTION-UNAVAILABLE
+  is raised.")
+  (:method (object)
+    (uninhibit-subscription object)
+    (unless (subscribedp object)
+      (error 'subscription-unavailable
+             :object object))
+    t))
+
+(defgeneric unsubscribe (object)
+  (:documentation "Unsubscribe from updates to OBJECT.")
+  (:method (object)
+    (inhibit-subscription object)))
+
 
 (defgeneric preference-parent (object)
   (:documentation
@@ -474,6 +519,12 @@ the given NAME."
                               :name (name object)
                               :type "txt")))
 
+(defmethod distinfo-subscription-url :around ((dist dist))
+  (unless (subscription-inhibited-p dist)
+    (call-next-method)))
+
+(defmethod subscribedp ((dist dist))
+  (distinfo-subscription-url dist))
 
 ;;;
 ;;; Releases

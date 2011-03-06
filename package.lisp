@@ -161,7 +161,15 @@
   (:export #:available-update
            #:update-release-differences
            #:show-update-report
-           #:update-in-place)
+           #:update-in-place
+           #:subscription-inhibition-file
+           #:inhibit-subscription
+           #:uninhibit-subscription
+           #:subscription-inhibited-p
+           #:subscription-unavailable
+           #:subscribedp
+           #:subscribe
+           #:unsubscribe)
   ;; Releases
   (:export #:release
            #:project-name

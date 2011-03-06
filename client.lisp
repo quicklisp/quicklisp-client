@@ -42,14 +42,20 @@
            (show-update-report dist new)
            (when (or (not prompt) (press-enter-to-continue))
              (update-in-place dist new)))
+          ((not (subscribedp dist))
+           (format t "~&You are not subscribed to ~S."
+                   (name dist)))
           (t
-           (format t "~&You already have the latest version of ~S."
-                   (short-description dist))))))
+           (format t "~&You already have the latest version of ~S: ~A.~%"
+                   (name dist)
+                   (version dist))))))
 
 (defun update-all-dists (&key (prompt t))
-  (dolist (old (all-dists))
-    (with-simple-restart (skip "Skip update of dist ~S" (name old))
-      (update-dist old :prompt prompt))))
+  (let ((dists (remove-if-not 'subscribedp (all-dists))))
+    (format t "~&~D dist~:P to check.~%" (length dists))
+    (dolist (old dists)
+      (with-simple-restart (skip "Skip update of dist ~S" (name old))
+        (update-dist old :prompt prompt)))))
 
 (defun help ()
   "For help with Quicklisp, see http://www.quicklisp.org/beta/")
