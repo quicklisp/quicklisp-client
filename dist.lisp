@@ -397,7 +397,8 @@
     :accessor local-distinfo-file))
   (:default-initargs
    :name "unnamed"
-   :version "unknown"))
+   :version "unknown"
+   :distinfo-subscription-url nil))
 
 (defmethod short-description ((dist dist))
   (format nil "~A ~A" (name dist) (version dist)))
