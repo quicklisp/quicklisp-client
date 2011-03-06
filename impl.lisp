@@ -219,7 +219,8 @@
   (:reexport-from #:sb-posix
                   #:rmdir)
   (:reexport-from #:sb-ext
-                  #:compiler-note)
+                  #:compiler-note
+                  #:delete-directory)
   (:reexport-from #:sb-bsd-sockets
                   #:get-host-by-name
                   #:inet-socket

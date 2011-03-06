@@ -796,3 +796,31 @@ FUN."
     (dolist (system (provided-systems t))
       (when (search term (name system))
         (format t "~A~%" system)))))
+
+
+;;;
+;;; Clean up things
+;;;
+
+(defgeneric clean (object)
+  (:documentation "Remove any unneeded files or directories related to
+  OBJECT."))
+
+(defmethod clean ((dist dist))
+  (let* ((releases (provided-releases dist))
+         (known-archives (mapcar 'local-archive-file releases))
+         (known-directories (mapcar 'base-directory releases))
+         (present-archives (mapcar 'truename
+                                   (directory-entries
+                                    (relative-to dist "archives/"))))
+         (present-directories (mapcar 'truename
+                                      (directory-entries
+                                       (relative-to dist "software/"))))
+         (garbage-archives
+          (set-difference present-archives known-archives
+                          :test 'equalp))
+         (garbage-directories
+          (set-difference present-directories known-directories
+                          :test 'equalp)))
+    (map nil 'delete-file garbage-archives)
+    (map nil 'delete-directory-tree garbage-directories)))

@@ -45,6 +45,7 @@
            #:add-to-init-file
            #:rename-directory
            #:delete-directory
+           #:directory-entries
            #:delete-directory-tree))
 
 (defpackage #:ql-network
@@ -106,6 +107,9 @@
         #:ql-setup
         #:ql-gunzipper
         #:ql-minitar)
+  (:import-from #:ql-impl-util
+                #:delete-directory-tree
+                #:directory-entries)
   ;; Install/enable protocol
   (:export #:installedp
            #:install
@@ -182,7 +186,8 @@
            #:*dist-enumeration-functions*
            #:find-asdf-system-file
            #:system-apropos
-           #:dependency-tree))
+           #:dependency-tree
+           #:clean))
 
 (defpackage #:quicklisp-client
   (:nicknames #:quicklisp #:ql)

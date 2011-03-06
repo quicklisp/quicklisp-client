@@ -121,79 +121,94 @@ quicklisp at CL startup."
 ;;; Deleting a directory tree
 ;;;
 
-(defvar *wild-entry* (make-pathname :name :wild
-                                    :type :wild
-                                    :version :wild))
+(defvar *wild-entry*
+  (make-pathname :name :wild :type :wild :version :wild))
 
-(defvar *wild-relative* (make-pathname :directory '(:relative :wild)))
-
-(defun wild-all-entries (directory)
-  (directory (merge-pathnames *wild-entry* directory)))
-
-(defun clisp-style-directory-entries (directory)
-  (nconc (wild-all-entries directory)
-         (directory (merge-pathnames *wild-relative* directory))))
+(defvar *wild-relative*
+  (make-pathname :directory '(:relative :wild)))
 
 (definterface directory-entries (directory)
   (:documentation "Return all directory entries of DIRECTORY as a
   list, or NIL if there are no directory entries. Excludes the \".\"
   and \"..\" entries.")
-  (:implementation t
-     ;; Argh. I hate #+/#-, but without it SBCL gives a full warning
-     ;; about unknown keyword arguments to DIRECTORY in 1.0.46 and
-     ;; older.
-     (directory (merge-pathnames *wild-entry* directory)
-                #+ccl :directories #+ccl t
-                ))
-  (:implementation (clisp ecl)
-     (clisp-style-directory-entries directory)))
+  (:implementation allegro
+    (directory directory))
+  (:implementation abcl
+    (directory (merge-pathnames *wild-entry* directory)
+               #+abcl :resolve-symlinks #+abcl nil))
+  (:implementation ccl
+    (directory (merge-pathnames *wild-entry* directory)
+               #+ccl directories #+ccl t))
+  (:implementation clisp
+    (mapcar 'first
+            (nconc (directory (merge-pathnames *wild-entry* directory)
+                              #+clisp :full #+clisp t)
+                   (directory (merge-pathnames *wild-relative* directory)
+                              #+clisp :full #+clisp t))))
+  (:implementation cmucl
+    (directory (merge-pathnames *wild-entry* directory)
+               #+cmucl :truenamep #+cmucl nil))
+  (:implementation lispworks
+    (directory (merge-pathnames *wild-entry* directory)
+               #+lispworks :directories #+lispworks t
+               #+lispworks :link-transparency #+lispworks nil))
+  (:implementation ecl
+    (warn "ECL does not support full directory listing")
+    nil)
+  (:implementation sbcl
+    (directory (merge-pathnames *wild-entry* directory)
+               #+sbcl :resolve-symlinks #+sbcl nil)))
 
 (definterface directoryp (entry)
   (:documentation "Return true if ENTRY refers to a directory.")
   (:implementation t
-     (not (or (pathname-name entry)
-              (pathname-type entry)
-              (pathname-version entry))))
+    (not (or (pathname-name entry)
+             (pathname-type entry)
+             (pathname-version entry))))
   (:implementation allegro
-     (ql-allegro:file-directory-p entry))
+    (ql-allegro:file-directory-p entry))
   (:implementation lispworks
-     (ql-lispworks:file-directory-p entry)))
+    (ql-lispworks:file-directory-p entry)))
 
 (definterface delete-directory (entry)
   (:documentation "Delete the directory ENTRY. Might signal an error
   if it is not an empty directory.")
   (:implementation t
-     (delete-file entry))
+    (delete-file entry))
   (:implementation allegro
-     (ql-allegro:delete-directory entry))
+    (ql-allegro:delete-directory entry))
   (:implementation ccl
-     (ql-ccl:delete-directory entry))
+    (ql-ccl:delete-directory entry))
   (:implementation clisp
-     (ql-clisp:delete-dir entry))
+    (ql-clisp:delete-dir entry))
   (:implementation cmucl
-     (ql-cmucl:unix-rmdir (namestring entry)))
+    (ql-cmucl:unix-rmdir (namestring entry)))
   (:implementation ecl
-     (ql-ecl:rmdir entry))
+    (ql-ecl:rmdir entry))
   (:implementation lispworks
-     (ql-lispworks:delete-directory entry))
+    (ql-lispworks:delete-directory entry))
   (:implementation sbcl
-     (ql-sbcl:rmdir entry)))
+    (ql-sbcl:delete-directory entry)))
 
 (definterface delete-directory-tree (pathname)
   (:documentation "Delete the directory tree rooted at PATHNAME.")
   (:implementation t
-     (let ((directories-to-process (list (truename pathname)))
-           (directories-to-delete '()))
-         (loop
-           (unless directories-to-process
-             (return))
-           (let* ((current (pop directories-to-process))
-                  (entries (directory-entries current)))
-             (push current directories-to-delete)
-             (dolist (entry entries)
-               (if (directoryp entry)
-                   (push entry directories-to-process)
-                   (delete-file entry)))))
-         (map nil 'delete-directory directories-to-delete)))
+    (let ((directories-to-process (list (truename pathname)))
+          (directories-to-delete '()))
+      (loop
+        (unless directories-to-process
+          (return))
+        (let* ((current (pop directories-to-process))
+               (entries (directory-entries current)))
+          (push current directories-to-delete)
+          (dolist (entry entries)
+            (if (directoryp entry)
+                (push entry directories-to-process)
+                (delete-file entry)))))
+      (map nil 'delete-directory directories-to-delete)))
   (:implementation allegro
-     (ql-allegro:delete-directory-and-files pathname)))
+    (ql-allegro:delete-directory-and-files pathname))
+  (:implementation ccl
+    (ql-ccl:delete-directory pathname))
+  (:implementation sbcl
+    (ql-sbcl:delete-directory pathname :recursive t)))
