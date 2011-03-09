@@ -8,7 +8,19 @@
                           :if-exists :supersede)
     (write-line string stream)))
 
+(defvar *do-not-prompt* nil
+  "When *DO-NOT-PROMPT* is true, PRESS-ENTER-TO-CONTINUE returns true
+  without user interaction.")
+
+(defmacro without-prompting (&body body)
+  "Evaluate BODY in an environment where PRESS-ENTER-TO-CONTINUE
+ always returns true without prompting for the user to press enter."
+  `(let ((*do-not-prompt* t))
+     ,@body))
+
 (defun press-enter-to-continue ()
+  (when *do-not-prompt*
+    (return-from press-enter-to-continue t))
   (format *query-io* "~&Press Enter to continue.~%")
   (let ((result (read-line *query-io*)))
     (zerop (length result))))

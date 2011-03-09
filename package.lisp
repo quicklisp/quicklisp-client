@@ -3,6 +3,7 @@
 (defpackage #:ql-util
   (:use #:cl)
   (:export #:write-line-to-file
+           #:without-prompting
            #:press-enter-to-continue
            #:replace-file
            #:delete-file-if-exists
