@@ -165,6 +165,7 @@
            #:update-release-differences
            #:show-update-report
            #:update-in-place
+           #:install-dist
            #:subscription-inhibition-file
            #:inhibit-subscription
            #:uninhibit-subscription
