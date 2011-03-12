@@ -31,6 +31,24 @@
     (delete-file to))
   (rename-file from to))
 
+(defun copy-file (from to &key (if-exists :rename-and-delete))
+  "Copy the file FROM to TO."
+  (let* ((buffer-size 8192)
+         (buffer (make-array buffer-size :element-type '(unsigned-byte 8))))
+    (with-open-file (from-stream from :element-type '(unsigned-byte 8))
+      (with-open-file (to-stream to :element-type '(unsigned-byte 8)
+                                 :direction :output
+                                 :if-exists if-exists)
+        (let ((length (file-length from-stream)))
+          (multiple-value-bind (full leftover)
+              (floor length buffer-size)
+            (dotimes (i full)
+              (read-sequence buffer from-stream)
+              (write-sequence buffer to-stream))
+            (read-sequence buffer from-stream)
+            (write-sequence buffer to-stream :end leftover)))))
+    (probe-file to)))
+
 (defun ensure-file-exists (pathname)
   (open pathname :direction :probe :if-does-not-exist :create))
 

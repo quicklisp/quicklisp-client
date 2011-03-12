@@ -6,6 +6,7 @@
            #:without-prompting
            #:press-enter-to-continue
            #:replace-file
+           #:copy-file
            #:delete-file-if-exists
            #:ensure-file-exists
            #:split-spaces
