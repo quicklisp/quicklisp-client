@@ -84,8 +84,10 @@
       (format t "~{    ~A~%~}" (mapcar #'prefix removed)))))
 
 (defmethod update-in-place :after ((old-dist dist) (new-dist dist))
-  ;; XXX Is this too nasty?
-  (clrhash asdf::*defined-systems*))
+  ;; Make sure ASDF will reload any systems at their new locations
+  (dolist (system (provided-systems old-dist))
+    (asdf:clear-system (name system)))
+  (clean new-dist))
 
 (defmethod update-in-place ((old-dist dist) (new-dist dist))
   (flet ((remove-installed (type)
