@@ -46,6 +46,7 @@
            #:add-to-init-file
            #:rename-directory
            #:delete-directory
+           #:probe-directory
            #:directory-entries
            #:delete-directory-tree))
 

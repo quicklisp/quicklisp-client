@@ -153,6 +153,8 @@
   (:reexport-from #:ext
                   #:delete-dir
                   #:rename-directory
+                  #:probe-directory
+                  #:probe-pathname
                   #:read-byte-sequence))
 
 

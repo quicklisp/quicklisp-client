@@ -32,6 +32,17 @@
     (ql-clisp:rename-directory from to)
     (truename to)))
 
+(definterface probe-directory (pathname)
+  (:implementation t
+    (let ((directory (probe-file pathname)))
+      (when directory
+        ;; probe-file is specified to return the truename of the path,
+        ;; but Allegro does not return the truename; truenamize it.
+        (truename directory))))
+  (:implementation clisp
+    (let ((directory (ql-clisp:probe-pathname pathname)))
+      (when (and directory (ql-clisp:probe-directory directory))
+        directory))))
 
 (definterface init-file-name ()
   (:implementation allegro

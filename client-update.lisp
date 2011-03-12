@@ -39,7 +39,7 @@
       (let* ((try (format nil "~A-~D" base suffix))
              (dir (qmerge (make-pathname :directory
                                          (list :relative "retired" try)))))
-        (unless (ignore-errors (truename dir))
+        (unless (probe-directory dir)
           (return dir))))))
 
 (defun update-client (&key (prompt t))
