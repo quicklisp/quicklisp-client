@@ -29,7 +29,11 @@
       (ensure-directories-exist target)
       (fetch url target :quietly t)
       (let ((new (make-dist-from-file target)))
-        (setf (base-directory new) (directory-namestring target))
+        (setf (base-directory new)
+              (make-pathname :name nil
+                             :type nil
+                             :version nil
+                             :defaults target))
         (when (and (string= (name dist) (name new))
                    (string/= (version dist) (version new)))
           new)))))
