@@ -167,10 +167,12 @@
          (handler-bind
              ((asdf:missing-dependency
                (lambda (c)
-                 (let ((missing (asdf::missing-requires c)))
-                   (autoload-system-and-dependencies missing
-                                                     :prompt prompt)
-                   (go retry)))))
+                 (let ((parent (asdf::missing-required-by c))
+                       (missing (asdf::missing-requires c)))
+                   (when (typep parent 'asdf:system)
+                     (autoload-system-and-dependencies missing
+                                                       :prompt prompt)
+                     (go retry))))))
            (apply-load-strategy strategy)))))
     name))
 
