@@ -9,6 +9,22 @@
   (:documentation
    "Return the dist of OBJECT."))
 
+(defgeneric available-versions (object)
+  (:documentation
+   "Return a list of version information for OBJECT."))
+
+(defgeneric system-index-url (object)
+  (:documentation
+   "Return the URL for the system index of OBJECT."))
+
+(defgeneric release-index-url (object)
+  (:documentation
+   "Return the URL for the release index of OBJECT."))
+
+(defgeneric available-versions-url (object)
+  (:documentation
+   "Return the URL for the available versions data file of OBJECT."))
+
 (defgeneric release (object)
   (:documentation
    "Return the release of OBJECT."))
@@ -377,6 +393,9 @@
    (release-index-url
     :initarg :release-index-url
     :accessor release-index-url)
+   (available-versions-url
+    :initarg :available-versions-url
+    :accessor available-versions-url)
    (archive-base-url
     :initarg :archive-base-url
     :accessor archive-base-url)
@@ -408,6 +427,15 @@
     (write-string (short-description dist) stream)))
 
 
+(defmethod slot-unbound (class (dist dist) (slot (eql 'available-versions-url)))
+  (let* ((subscription-url (distinfo-subscription-url dist))
+         (suffix-pos (position #\. subscription-url :from-end t))
+         (new-url (concatenate 'string
+                               (subseq subscription-url 0 suffix-pos)
+                               "-versions.txt")))
+    (setf (available-versions-url dist) new-url)))
+
+
 (defmethod provided-releases ((dist dist))
   (loop for release being each hash-value of (release-index dist)
         collect release))
@@ -435,10 +463,13 @@ the given NAME."
 (defmethod slot-unbound (class (dist dist) (slot (eql 'base-directory)))
   (setf (base-directory dist) (dist-name-pathname (name dist))))
 
-(defun make-dist-from-file (file)
+(defun make-dist-from-file (file &key (class 'dist))
   "Load dist info from FILE and use it to create a dist instance."
   (let ((initargs (config-file-initargs file)))
-    (apply #'make-instance 'dist :local-distinfo-file file initargs)))
+    (apply #'make-instance class
+           :local-distinfo-file file
+           :allow-other-keys t
+           initargs)))
 
 (defmethod install-metadata-file ((dist dist))
   (relative-to dist "distinfo.txt"))
@@ -876,3 +907,27 @@ FUN."
                           :test 'equalp)))
     (map nil 'delete-file garbage-archives)
     (map nil 'delete-directory-tree garbage-directories)))
+
+
+;;;
+;;; Available versions
+;;;
+
+(defmethod available-versions ((dist dist))
+  (let ((temp (qmerge "tmp/dist-versions.txt"))
+        (versions '())
+        (url (available-versions-url dist)))
+    (when url
+      (ensure-directories-exist temp)
+      (delete-file-if-exists temp)
+      (handler-case
+          (fetch url temp)
+        (unexpected-http-status ()
+          (return-from available-versions nil)))
+      (with-open-file (stream temp)
+        (loop for line = (read-line stream nil)
+              while line do
+              (destructuring-bind (version url)
+                  (split-spaces line)
+                (setf versions (acons version url versions)))))
+      versions)))

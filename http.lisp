@@ -757,6 +757,34 @@ the indexes in the header accordingly."
         (funcall fun)))
     (finish-display progress-bar)))
 
+(define-condition fetch-error (error) ())
+
+(define-condition unexpected-http-status (fetch-error)
+  ((status-code
+    :initarg :status-code
+    :reader unexpected-http-status-code)
+   (url
+    :initarg :url
+    :reader unexpected-http-status-url))
+  (:report
+   (lambda (condition stream)
+     (format stream "Unexpected HTTP status for ~A: ~A"
+             (unexpected-http-status-url condition)
+             (unexpected-http-status-code condition)))))
+
+(define-condition too-many-redirects (fetch-error)
+  ((url
+    :initarg :url
+    :reader too-many-redirects-url)
+   (redirect-count
+    :initarg :redirect-count
+    :reader too-many-redirects-count))
+  (:report
+   (lambda (condition stream)
+     (format stream "Too many redirects (~:D) for ~A"
+             (too-many-redirects-count condition)
+             (too-many-redirects-url condition)))))
+
 (defun fetch (url file &key (follow-redirects t) quietly
               (if-exists :rename-and-delete)
               (maximum-redirects *maximum-redirects*))
@@ -771,7 +799,9 @@ the indexes in the header accordingly."
                     *trace-output*)))
     (loop
      (when (<= maximum-redirects redirect-count)
-       (error "Too many redirects for ~A" original-url))
+       (error 'too-many-redirects
+              :url original-url
+              :redirect-count redirect-count))
      (with-connection (connection (hostname connect-url) (port connect-url))
        (let ((cbuf (make-instance 'cbuf :connection connection))
              (request (request-buffer "GET" url)))
@@ -795,8 +825,9 @@ the indexes in the header accordingly."
                            (save-response file header cbuf
                                           :if-exists if-exists))))))
                  ((not (<= 300 (status header) 399))
-                  (error "Unexpected status for ~A: ~A"
-                         url (status header))))
+                  (error 'unexpected-http-status
+                         :url url
+                         :status-code (status header))))
            (if (and follow-redirects (<= 300 (status header) 399))
                (let ((new-urlstring (ascii-header-value "location" header)))
                  (when (not new-urlstring)
@@ -807,5 +838,3 @@ the indexes in the header accordingly."
                                        url))
                  (format stream "~&; Redirecting to ~A~%" url))
                (return (values header (and file (probe-file file)))))))))))
-
-

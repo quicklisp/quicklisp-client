@@ -75,7 +75,14 @@
            #:path
            #:url
            #:*maximum-redirects*
-           #:*default-url-defaults*))
+           #:*default-url-defaults*)
+  (:export #:fetch-error
+           #:unexpected-http-status
+           #:unexpected-http-status-code
+           #:unexpected-http-status-url
+           #:too-many-redirects
+           #:too-many-redirects-url
+           #:too-many-redirects-count))
 
 (defpackage #:ql-minitar
   (:use #:cl)
@@ -152,6 +159,8 @@
            #:find-release-in-dist
            #:system-index-url
            #:release-index-url
+           #:available-versions-url
+           #:available-versions
            #:version
            #:subscription-url
            #:new-version-available-p
