@@ -350,7 +350,7 @@ information."
                  "unknown")))
     ;; FIXME: Be more configurable, and take/set the version from
     ;; somewhere else.
-    (format nil "quicklisp-client/2010121400 ~A/~A"
+    (format nil "quicklisp-client/2011031900 ~A/~A"
             (encode (lisp-implementation-type))
             (version-string (lisp-implementation-version)))))
 
