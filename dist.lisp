@@ -164,6 +164,7 @@
    "Return a value suitable for checking if OBJECT has no specific
    preference set.")
   (:method (object)
+    (declare (ignore object))
     nil))
 
 (defgeneric preference-file (object)
@@ -428,6 +429,7 @@
 
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'available-versions-url)))
+  (declare (ignore class))
   (let* ((subscription-url (distinfo-subscription-url dist))
          (suffix-pos (position #\. subscription-url :from-end t))
          (new-url (concatenate 'string
@@ -461,6 +463,7 @@ the given NAME."
   (qmerge (make-pathname :directory (list :relative "dists" name))))
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'base-directory)))
+  (declare (ignore class))
   (setf (base-directory dist) (dist-name-pathname (name dist))))
 
 (defun make-dist-from-file (file &key (class 'dist))
@@ -718,6 +721,7 @@ the given NAME."
     (setf (release-index dist) index)))
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'release-index)))
+  (declare (ignore class))
   (initialize-release-index dist))
 
 
@@ -782,12 +786,14 @@ the given NAME."
     (setf (system-index dist) index)))
 
 (defmethod slot-unbound (class (release release) (slot (eql 'provided-systems)))
+  (declare (ignore class))
   (initialize-system-index (dist release))
   (if (slot-boundp release 'provided-systems)
       (provided-systems release)
       (setf (provided-systems release) nil)))
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'system-index)))
+  (declare (ignore class))
   (initialize-system-index dist))
 
 (defmethod find-system-in-dist (system-name dist)

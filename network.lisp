@@ -14,6 +14,7 @@
   (:documentation "Open and return a network connection to HOST on the
   given PORT.")
   (:implementation t
+    (declare (ignore host port))
     (error "Sorry, quicklisp in implementation ~S is not supported yet."
            (lisp-implementation-type)))
   (:implementation allegro

@@ -558,12 +558,6 @@ the indexes in the header accordingly."
                (acase code
                  (:lf #'in-new-line)
                  (t (in-new-line code))))
-             (pending-value (code)
-               (acase code
-                 ((#\Tab #\Space) #'pending-value)
-                 (:cr #'after-cr)
-                 (:lf #'in-new-line)
-                 (t (save pos value-starts) #'in-value)))
              (in-name (code)
                (acase code
                  (#\:

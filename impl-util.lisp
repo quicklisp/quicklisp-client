@@ -16,11 +16,13 @@
 
 (defimplementation (call-with-quiet-compilation :for sbcl :qualifier :around)
     (fun)
+  (declare (ignore fun))
   (handler-bind ((ql-sbcl:compiler-note #'muffle-warning))
     (call-next-method)))
 
 (defimplementation (call-with-quiet-compilation :for cmucl :qualifier :around)
     (fun)
+  (declare (ignore fun))
   (let ((ql-cmucl:*gc-verbose* nil))
     (call-next-method)))
 
@@ -155,7 +157,7 @@ quicklisp at CL startup."
                #+abcl :resolve-symlinks #+abcl nil))
   (:implementation ccl
     (directory (merge-pathnames *wild-entry* directory)
-               #+ccl directories #+ccl t))
+               #+ccl :directories #+ccl t))
   (:implementation clisp
     (mapcar 'first
             (nconc (directory (merge-pathnames *wild-entry* directory)
@@ -170,6 +172,7 @@ quicklisp at CL startup."
                #+lispworks :directories #+lispworks t
                #+lispworks :link-transparency #+lispworks nil))
   (:implementation ecl
+    (declare (ignore directory))
     (warn "ECL does not support full directory listing")
     nil)
   (:implementation sbcl
