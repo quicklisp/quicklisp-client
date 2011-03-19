@@ -27,7 +27,7 @@
   (:export #:*implementation*)
   (:export #:definterface
            #:defimplementation
-           #:defimplementation-case)
+           #:show-interfaces)
   (:export #:lisp
            #:abcl
            #:allegro

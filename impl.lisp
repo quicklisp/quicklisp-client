@@ -5,6 +5,19 @@
     (declare (ignore args))
     (error "Not implemented")))
 
+(defvar *interfaces* (make-hash-table)
+  "A table of defined interfaces and their documentation.")
+
+(defun show-interfaces ()
+  "Display information about what interfaces are defined."
+  (maphash (lambda (interface info)
+             (destructuring-bind (arguments docstring)
+                 info
+               (let ((*package* (find-package :keyword)))
+                 (format t "(~S ~:[()~;~:*~A~]~@[~% ~S~])~%"
+                         interface arguments docstring))))
+           *interfaces*))
+
 (defmacro neuter-package (name)
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (let ((definition (fdefinition 'error-unimplemented)))
@@ -62,6 +75,9 @@
                  `((neuter-package ,package-name))))))
 
 (defmacro definterface (name lambda-list &body options)
+  (let* ((doc-option (find :documentation options :key #'first))
+         (doc (second doc-option)))
+    (setf (gethash name *interfaces*) (list lambda-list doc)))
   (let* ((forbidden (intersection lambda-list lambda-list-keywords))
          (gf-options (remove :implementation options :key #'first))
          (implementations (set-difference options gf-options)))
