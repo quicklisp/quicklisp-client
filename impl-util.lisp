@@ -3,6 +3,9 @@
 (in-package #:ql-impl-util)
 
 (definterface call-with-quiet-compilation (fun)
+  (:documentation
+   "Call FUN with warnings, style-warnings, and other verbose messages
+   suppressed.")
   (:implementation t
     (let ((*load-verbose* nil)
           (*compile-verbose* nil)
@@ -33,6 +36,8 @@
     (truename to)))
 
 (definterface probe-directory (pathname)
+  (:documentation "Return the truename of PATHNAME, if it exists and
+  is a directory, or NIL otherwise.")
   (:implementation t
     (let ((directory (probe-file pathname)))
       (when directory
@@ -45,6 +50,7 @@
         directory))))
 
 (definterface init-file-name ()
+  (:documentation "Return the init file name for the current implementation.")
   (:implementation allegro
     ".clinit.cl")
   (:implementation abcl

@@ -11,6 +11,8 @@
     (ql-sbcl:host-ent-address (ql-sbcl:get-host-by-name host))))
 
 (definterface open-connection (host port)
+  (:documentation "Open and return a network connection to HOST on the
+  given PORT.")
   (:implementation t
     (error "Sorry, quicklisp in implementation ~S is not supported yet."
            (lisp-implementation-type)))
@@ -64,6 +66,8 @@
                                   :buffering :full))))
 
 (definterface read-octets (buffer connection)
+  (:documentation "Read from CONNECTION into BUFFER. Returns the
+  number of octets read.")
   (:implementation t
     (read-sequence buffer connection))
   (:implementation allegro
@@ -74,6 +78,7 @@
                                   :interactive t)))
 
 (definterface write-octets (buffer connection)
+  (:documentation "Write the contents of BUFFER to CONNECTION.")
   (:implementation t
     (write-sequence buffer connection)
     (finish-output connection)))
@@ -83,6 +88,10 @@
     (ignore-errors (close connection))))
 
 (definterface call-with-connection (host port fun)
+  (:documentation "Establish a network connection to HOST on PORT and
+  call FUN with that connection as the only argument. Unconditionally
+  closes the connection afterwareds via CLOSE-CONNECTION in an
+  unwind-protect. See also WITH-CONNECTION.")
   (:implementation t
     (let (connection)
       (unwind-protect
@@ -90,7 +99,7 @@
              (setf connection (open-connection host port))
              (funcall fun connection))
         (when connection
-          (close connection))))))
+          (close-connection connection))))))
 
 (defmacro with-connection ((connection host port) &body body)
   `(call-with-connection ,host ,port (lambda (,connection) ,@body)))
