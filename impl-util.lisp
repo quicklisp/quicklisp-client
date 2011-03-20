@@ -208,7 +208,7 @@ quicklisp at CL startup."
   (:implementation lispworks
     (ql-lispworks:delete-directory entry))
   (:implementation sbcl
-    (ql-sbcl:delete-directory entry)))
+    (ql-sbcl:rmdir entry)))
 
 (definterface delete-directory-tree (pathname)
   (:documentation "Delete the directory tree rooted at PATHNAME.")
@@ -229,6 +229,4 @@ quicklisp at CL startup."
   (:implementation allegro
     (ql-allegro:delete-directory-and-files pathname))
   (:implementation ccl
-    (ql-ccl:delete-directory pathname))
-  (:implementation sbcl
-    (ql-sbcl:delete-directory pathname :recursive t)))
+    (ql-ccl:delete-directory pathname)))
