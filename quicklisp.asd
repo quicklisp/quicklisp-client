@@ -2,7 +2,7 @@
 
 (asdf:defsystem #:quicklisp
   :serial t
-  :version "2011031900"
+  :version "2011032000"
   :components ((:file "package")
                (:file "utils")
                (:file "config")
