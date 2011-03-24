@@ -80,11 +80,12 @@
     (setf (gethash name *interfaces*) (list lambda-list doc)))
   (let* ((forbidden (intersection lambda-list lambda-list-keywords))
          (gf-options (remove :implementation options :key #'first))
-         (implementations (set-difference options gf-options)))
+         (implementations (set-difference options gf-options))
+         (implementation-arg (copy-symbol '%implementation)))
     (when forbidden
       (error "~S not allowed in definterface lambda list" forbidden))
     (flet ((method-option (class body)
-             `(:method ((*implementation* ,class) ,@lambda-list)
+             `(:method ((,implementation-arg ,class) ,@lambda-list)
                 ,@body)))
       (let ((generic-name (intern (format nil "%~A" name))))
         `(progn
@@ -110,12 +111,13 @@
           (list name-and-options))
     (unless for
       (error "You must specify an implementation name."))
-    (let ((generic-name (find-symbol (format nil "%~A" name))))
+    (let ((generic-name (find-symbol (format nil "%~A" name)))
+          (implementation-arg (copy-symbol '%implementation)))
       (unless generic-name
         (error "~S does not name an implementation function" name))
       `(defmethod ,generic-name
            ,@(when qualifier (list qualifier))
-         ,(list* `(*implementation* ,for) lambda-list) ,@body))))
+         ,(list* `(,implementation-arg ,for) lambda-list) ,@body))))
 
 
 ;;; Bootstrap implementations
