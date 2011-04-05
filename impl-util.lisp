@@ -108,7 +108,7 @@
 (defun suitable-lisp-init-file (implementation)
   "Return the name of IMPLEMENTATION's init file. If IMPLEMENTAION is
 a string or pathname, return its merged pathname instead."
-  (etypecase implementation
+  (typecase implementation
     ((or string pathname)
      (merge-pathnames implementation))
     ((or null (eql t))
