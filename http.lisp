@@ -732,12 +732,12 @@ the indexes in the header accordingly."
                           :if-exists if-exists
                           :element-type 'octet)
     (let ((content-length (content-length header)))
-      (cond (content-length
+      (cond ((chunkedp header)
+             (save-chunk-response stream cbuf))
+            (content-length
              (call-for-n-octets content-length
                                 (make-stream-writer stream)
                                 cbuf))
-            ((chunkedp header)
-             (save-chunk-response stream cbuf))
             (t
              (call-until-end (make-stream-writer stream) cbuf))))))
 
