@@ -9,6 +9,7 @@
 (defun use-only-quicklisp-systems ()
   (asdf:initialize-source-registry
    '(:source-registry :ignore-inherited-configuration))
+  (asdf:map-systems 'asdf:clear-system)
   t)
 
 
