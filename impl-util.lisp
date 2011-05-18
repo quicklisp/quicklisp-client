@@ -137,6 +137,26 @@ quicklisp at CL startup."
 
 
 ;;;
+;;; Native namestrings.
+;;;
+
+(definterface native-namestring (pathname)
+  (:documentation "In Clozure CL, #\\.s in pathname-names are escaped
+  in namestrings with #\\> on Windows and #\\\\ elsewhere. This can
+  cause a problem when using CL:NAMESTRING to store pathname data that
+  might be used by other implementations. NATIVE-NAMESTRING is
+  intended to provide a namestring that can be parsed as a same-enough
+  object on multiple implementations.")
+  (:implementation t
+    (namestring pathname))
+  (:implementation ccl
+    (ql-ccl:native-translated-namestring pathname))
+  (:implementation sbcl
+    (ql-sbcl:native-namestring pathname)))
+
+
+
+;;;
 ;;; Deleting a directory tree
 ;;;
 
@@ -230,3 +250,4 @@ quicklisp at CL startup."
     (ql-allegro:delete-directory-and-files pathname))
   (:implementation ccl
     (ql-ccl:delete-directory pathname)))
+

@@ -49,7 +49,8 @@
            #:delete-directory
            #:probe-directory
            #:directory-entries
-           #:delete-directory-tree))
+           #:delete-directory-tree
+           #:native-namestring))
 
 (defpackage #:ql-network
   (:use #:cl #:ql-impl)

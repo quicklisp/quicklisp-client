@@ -159,7 +159,8 @@
   (:class ccl)
   (:reexport-from #:ccl
                   #:delete-directory
-                  #:make-socket))
+                  #:make-socket
+                  #:native-translated-namestring))
 
 ;;; GNU CLISP
 
@@ -239,7 +240,8 @@
   (:reexport-from #:sb-posix
                   #:rmdir)
   (:reexport-from #:sb-ext
-                  #:compiler-note)
+                  #:compiler-note
+                  #:native-namestring)
   (:reexport-from #:sb-bsd-sockets
                   #:get-host-by-name
                   #:inet-socket
