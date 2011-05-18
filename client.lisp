@@ -69,3 +69,20 @@
   (let ((dist (find-dist name)))
     (when dist
       (ql-dist:uninstall dist))))
+
+(defun write-asdf-manifest-file (output-file
+                                   &key (if-exists :rename-and-delete))
+  "Write a list of system file pathnames to OUTPUT-FILE, one per line,
+in order of descending QL-DIST:PREFERENCE."
+  (with-open-file (stream output-file
+                          :direction :output
+                          :if-exists if-exists)
+    (with-consistent-dists
+      (let ((systems (provided-systems t)))
+        (dolist (system (sort systems #'>
+                              :key #'preference))
+          (let ((system-file (find-asdf-system-file (name system))))
+            (when system-file
+              (format stream "~A~%"
+                      (native-namestring system-file))))))))
+  (probe-file output-file))

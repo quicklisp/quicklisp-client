@@ -233,6 +233,7 @@
            #:update-all-dists
            #:add-to-init-file
            #:use-only-quicklisp-systems
+           #:write-asdf-manifest-file
            #:help)
   (:shadow #:uninstall)
   (:use #:cl
