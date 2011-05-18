@@ -879,6 +879,11 @@ FUN."
                        appending (provided-systems dist))))
     (sort systems #'string< :key #'name)))
 
+(defmethod provided-releases ((object (eql t)))
+  (let ((releases (loop for dist in (enabled-dists)
+                        appending (provided-releases dist))))
+    (sort releases #'string< :key #'name)))
+
 
 (defgeneric system-apropos (term)
   (:method ((term string))
