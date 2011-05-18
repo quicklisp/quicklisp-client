@@ -195,11 +195,11 @@
       (enable (find-dist "quicklisp")))))
 
 (defun setup ()
-  (unless (member 'find-asdf-system-file
+  (unless (member 'system-definition-searcher
                   asdf:*system-definition-search-functions*)
     (setf asdf:*system-definition-search-functions*
           (append asdf:*system-definition-search-functions*
-                  (list 'find-asdf-system-file))))
+                  (list 'system-definition-searcher))))
   (let ((files (nconc (directory (qmerge "local-setup/*.lisp"))
                       (directory (qmerge "local-setup/*.cl")))))
     (with-simple-restart (abort "Stop loading local setup files")
