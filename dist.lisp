@@ -875,7 +875,7 @@ FUN."
 
 
 (defmethod provided-systems ((object (eql t)))
-  (let ((systems (loop for dist in (all-dists)
+  (let ((systems (loop for dist in (enabled-dists)
                        appending (provided-systems dist))))
     (sort systems #'string< :key #'name)))
 
