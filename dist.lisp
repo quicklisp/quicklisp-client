@@ -898,7 +898,8 @@ FUN."
 (defgeneric system-apropos (term)
   (:method ((term string))
     (dolist (system (provided-systems t))
-      (when (search term (name system))
+      (when (or (search term (name system))
+                (search term (name (release system))))
         (format t "~A~%" system)))))
 
 
