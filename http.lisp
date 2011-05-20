@@ -339,15 +339,15 @@ information."
            (encode (string)
              (substitute-if #\_ #'requires-encoding string))
            (version-string (string)
-             (if string
+             (if (string-equal string nil)
+                 "unknown"
                  (let* ((length (length string))
                         (start (or (position-if #'digit-char-p string)
                                    0))
                         (space (or (position #\Space string :start start)
                                    length))
                         (limit (min space length (+ start 24))))
-                   (encode (subseq string start limit)))
-                 "unknown")))
+                   (encode (subseq string start limit))))))
     ;; FIXME: Be more configurable, and take/set the version from
     ;; somewhere else.
     (format nil "quicklisp-client/2011040600 ~A/~A"
