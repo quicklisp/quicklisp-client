@@ -1,6 +1,8 @@
 ;;;; package.lisp
 
 (defpackage #:ql-util
+  (:documentation
+   "Utility functions used in various places.")
   (:use #:cl)
   (:export #:write-line-to-file
            #:without-prompting
@@ -13,16 +15,23 @@
            #:first-line))
 
 (defpackage #:ql-setup
+  (:documentation
+   "Functions and variables initialized early in the Quicklisp client
+   configuration.")
   (:use #:cl)
   (:export #:qmerge
            #:qenough
            #:*quicklisp-home*))
 
 (defpackage #:ql-config
+  (:documentation
+   "Getting and setting persistent configuration values.")
   (:use #:cl #:ql-util #:ql-setup)
   (:export #:config-value))
 
 (defpackage #:ql-impl
+  (:documentation
+   "Configuration of implementation-specific packages and interfaces.")
   (:use #:cl)
   (:export #:*implementation*)
   (:export #:definterface
@@ -42,6 +51,9 @@
            #:sbcl))
 
 (defpackage #:ql-impl-util
+  (:documentation
+   "Utility functions that require implementation-specific
+   functionality.")
   (:use #:cl #:ql-impl)
   (:export #:call-with-quiet-compilation
            #:add-to-init-file
@@ -53,6 +65,8 @@
            #:native-namestring))
 
 (defpackage #:ql-network
+  (:documentation
+   "Simple, low-level network access.")
   (:use #:cl #:ql-impl)
   (:export #:open-connection
            #:write-octets
@@ -61,6 +75,8 @@
            #:with-connection))
 
 (defpackage #:ql-progress
+  (:documentation
+   "Displaying a progress bar.")
   (:use #:cl)
   (:export #:make-progress-bar
            #:start-display
@@ -68,6 +84,8 @@
            #:finish-display))
 
 (defpackage #:ql-http
+  (:documentation
+   "A simple HTTP client.")
   (:use #:cl #:ql-network #:ql-progress #:ql-config)
   (:export #:*proxy-url*
            #:fetch
@@ -86,32 +104,23 @@
            #:too-many-redirects-count))
 
 (defpackage #:ql-minitar
+  (:documentation
+   "A simple implementation of unpacking the 'tar' file format.")
   (:use #:cl)
   (:export #:tarball-contents
            #:unpack-tarball))
 
 (defpackage #:ql-gunzipper
+  (:documentation
+   "An implementation of gunzip.")
   (:use #:cl)
   (:export #:gunzip))
 
-(defpackage #:ql-release-index
-  (:use #:cl)
-  (:export #:load-quicklisp-index
-           #:find-system
-           #:find-release
-           #:find-systems-named
-           #:find-releases-named
-           #:depends-on
-           #:project-name
-           #:digest
-           #:prefix
-           #:release
-           #:system-paths
-           #:required-systems
-           #:download-url
-           #:*quicklisp-index*))
-
 (defpackage #:ql-dist
+  (:documentation
+   "Generic functions, variables, and classes for interacting with the
+   dist system. Documented, exported symbols are intended for public
+   use.")
   (:use #:cl
         #:ql-util
         #:ql-http
@@ -207,13 +216,25 @@
   (:export #:standard-dist-enumeration-function
            #:*dist-enumeration-functions*
            #:find-asdf-system-file
-           #:system-definition-searcher
            #:system-apropos
            #:dependency-tree
            #:clean))
 
 (defpackage #:quicklisp-client
+  (:documentation
+   "The Quicklisp client package, intended for end-user Quicklisp
+   commands and configuration parameters.")
   (:nicknames #:quicklisp #:ql)
+  (:use #:cl
+        #:ql-util
+        #:ql-impl-util
+        #:ql-dist
+        #:ql-http
+        #:ql-setup
+        #:ql-config
+        #:ql-minitar
+        #:ql-gunzipper)
+  (:shadow #:uninstall)
   (:export #:quickload
            #:*quickload-prompt*
            #:*quickload-verbose*
@@ -235,17 +256,7 @@
            #:add-to-init-file
            #:use-only-quicklisp-systems
            #:write-asdf-manifest-file
-           #:help)
-  (:shadow #:uninstall)
-  (:use #:cl
-        #:ql-util
-        #:ql-impl-util
-        #:ql-dist
-        #:ql-http
-        #:ql-setup
-        #:ql-config
-        #:ql-minitar
-        #:ql-gunzipper))
+           #:help))
 
 (in-package #:quicklisp-client)
 
