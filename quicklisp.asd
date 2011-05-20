@@ -1,6 +1,9 @@
 ;;;; quicklisp.asd
 
 (asdf:defsystem #:quicklisp
+  :description "The Quicklisp client application."
+  :author "Zach Beane <zach@quicklisp.org>"
+  :license "BSD-style"
   :serial t
   :version "2011040600"
   :components ((:file "package")
