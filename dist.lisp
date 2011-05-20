@@ -331,9 +331,7 @@
   (cond ((string= :string "string")
          #'string-downcase)
         ((string= :string "STRING")
-         #'string-upcase)
-        (t
-         (error "Cannot determine default case of symbols."))))
+         #'string-upcase)))
 
 (defun config-file-initargs (file)
   (flet ((initarg-keyword (string)
