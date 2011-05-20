@@ -216,6 +216,7 @@
   (:export #:standard-dist-enumeration-function
            #:*dist-enumeration-functions*
            #:find-asdf-system-file
+           #:system-definition-searcher
            #:system-apropos
            #:dependency-tree
            #:clean))
