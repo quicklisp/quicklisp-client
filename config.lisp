@@ -27,8 +27,14 @@
 
 (defun (setf config-value) (new-value path)
   (let ((file (config-value-file-pathname path)))
-    (ensure-directories-exist file)
-    (with-open-file (stream file :direction :output
-                            :if-does-not-exist :create
-                            :if-exists :rename-and-delete)
-      (write-line new-value stream))))
+    (typecase new-value
+      (null
+       (delete-file-if-exists file))
+      (string
+       (ensure-directories-exist file)
+       (with-open-file (stream file :direction :output
+                               :if-does-not-exist :create
+                               :if-exists :rename-and-delete)
+         (write-line new-value stream)))
+      (t
+       (error "Bad config value ~S; must be a string or NIL" new-value)))))
