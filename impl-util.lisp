@@ -61,7 +61,9 @@
     #+windows
     "ccl-init.lisp"
     #-windows
-    ".ccl-init.lisp")
+    (if (probe-file "home:ccl-init.lisp")
+        "ccl-init.lisp"
+        ".ccl-init.lisp"))
   (:implementation clisp
     ".clisprc.lisp")
   (:implementation ecl
