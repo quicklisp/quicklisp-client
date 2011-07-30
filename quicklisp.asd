@@ -5,7 +5,7 @@
   :author "Zach Beane <zach@quicklisp.org>"
   :license "BSD-style"
   :serial t
-  :version "2011051901"
+  :version "2011073000"
   :components ((:file "package")
                (:file "utils")
                (:file "config")
