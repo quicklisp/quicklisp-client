@@ -25,6 +25,7 @@
 (defmethod available-update ((dist dist))
   (let ((url (distinfo-subscription-url dist))
         (target (qmerge "tmp/distinfo-update/distinfo.txt")))
+    (delete-directory-tree (qmerge "tmp/distinfo-update/"))
     (when url
       (ensure-directories-exist target)
       (fetch url target :quietly t)
