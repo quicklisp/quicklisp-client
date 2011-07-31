@@ -129,7 +129,8 @@
         #:ql-minitar)
   (:import-from #:ql-impl-util
                 #:delete-directory-tree
-                #:directory-entries)
+                #:directory-entries
+                #:probe-directory)
   ;; Install/enable protocol
   (:export #:installedp
            #:install
