@@ -62,7 +62,9 @@
 
 (defgeneric base-directory (object)
   (:documentation
-   "Return the base directory pathname of OBJECT."))
+   "Return the base directory pathname of OBJECT.")
+  (:method ((object pathname))
+    (merge-pathnames object)))
 
 (defgeneric relative-to (object pathname)
   (:documentation
