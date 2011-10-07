@@ -277,10 +277,10 @@
    "If the archive file for RELEASE is not available locally, fetch it
    and return the pathname to it."))
 
-(defgeneric local-archive-file-valid-p (release)
+(defgeneric check-local-archive-file (release)
   (:documentation
    "Check the local archive file of RELEASE for validity, including
-   size and signature checks."))
+   size and signature checks. Signals errors in the case of invalid files."))
 
 
 (defgeneric archive-url (release)
@@ -612,8 +612,39 @@ the given NAME."
             (short-description release)
             (short-description (dist release)))))
 
-(defmethod local-archive-file-valid-p ((release release))
-  t)
+(define-condition invalid-local-archive (error)
+  ((release
+    :initarg :release
+    :reader invalid-local-archive-release)
+   (file
+    :initarg :file
+    :reader invalid-local-archive-file)))
+
+(define-condition missing-local-archive (invalid-local-archive)
+  ())
+
+(define-condition badly-sized-local-archive (invalid-local-archive)
+  ((expected-size
+    :initarg :expected-size
+    :reader badly-sized-local-archive-expected-size)
+   (actual-size
+    :initarg :actual-size
+    :reader badly-sized-local-archive-actual-size)))
+
+(defmethod check-local-archive-file ((release release))
+  (let ((file (local-archive-file release)))
+    (unless (probe-file file)
+      (error 'missing-local-archive
+             :file file
+             :release release))
+    (let ((actual-size (file-size file))
+          (expected-size (archive-size release)))
+      (unless (= actual-size expected-size)
+        (error 'badly-sized-local-archive
+               :file file
+               :release release
+               :actual-size actual-size
+               :expected-size expected-size)))))
 
 (defmethod local-archive-file ((release release))
   (relative-to (dist release)
@@ -623,10 +654,21 @@ the given NAME."
 
 (defmethod ensure-local-archive-file ((release release))
   (let ((pathname (local-archive-file release)))
-    (or (probe-file pathname)
-        (progn
-          (ensure-directories-exist pathname)
-          (nth-value 1 (fetch (archive-url release) pathname))))))
+    (tagbody
+     :retry
+       (or (probe-file pathname)
+           (progn
+             (ensure-directories-exist pathname)
+             (fetch (archive-url release) pathname)))
+       (unless (local-archive-file-valid-p release)
+         (restart-case
+             (check-local-archive-file release)
+           (delete-and-retry (&optional v)
+             :report "Delete the archive file and fetch it again"
+             (declare (ignore v))
+             (delete-file pathname)
+             (go :retry)))))
+    pathname))
 
 
 (defmethod base-directory ((release release))

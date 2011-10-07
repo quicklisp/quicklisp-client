@@ -12,7 +12,8 @@
            #:delete-file-if-exists
            #:ensure-file-exists
            #:split-spaces
-           #:first-line))
+           #:first-line
+           #:file-size))
 
 (defpackage #:ql-setup
   (:documentation
@@ -206,7 +207,11 @@
            #:prefix
            #:local-archive-file
            #:ensure-local-archive-file
-           #:local-archive-file-valid-p)
+           #:check-local-archive-file
+           #:invalid-local-archive
+           #:missing-local-archive
+           #:badly-sized-local-archive
+           #:delete-and-retry)
   ;; Systems
   (:export #:dist
            #:release
