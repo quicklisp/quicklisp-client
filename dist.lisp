@@ -660,14 +660,13 @@ the given NAME."
            (progn
              (ensure-directories-exist pathname)
              (fetch (archive-url release) pathname)))
-       (unless (local-archive-file-valid-p release)
-         (restart-case
-             (check-local-archive-file release)
-           (delete-and-retry (&optional v)
-             :report "Delete the archive file and fetch it again"
-             (declare (ignore v))
-             (delete-file pathname)
-             (go :retry)))))
+       (restart-case
+           (check-local-archive-file release)
+         (delete-and-retry (&optional v)
+           :report "Delete the archive file and fetch it again"
+           (declare (ignore v))
+           (delete-file pathname)
+           (go :retry))))
     pathname))
 
 
