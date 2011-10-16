@@ -71,9 +71,12 @@
       (ql-dist:uninstall dist))))
 
 (defun write-asdf-manifest-file (output-file
-                                   &key (if-exists :rename-and-delete))
+                                 &key (if-exists :rename-and-delete))
   "Write a list of system file pathnames to OUTPUT-FILE, one per line,
 in order of descending QL-DIST:PREFERENCE."
+  (when (or (eql output-file nil)
+            (eql output-file t))
+    (setf output-file (qmerge "manifest.txt")))
   (with-open-file (stream output-file
                           :direction :output
                           :if-exists if-exists)
