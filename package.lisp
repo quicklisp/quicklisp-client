@@ -263,6 +263,7 @@
            #:add-to-init-file
            #:use-only-quicklisp-systems
            #:write-asdf-manifest-file
+           #:where-is-system
            #:help))
 
 (in-package #:quicklisp-client)

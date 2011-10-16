@@ -86,3 +86,10 @@ in order of descending QL-DIST:PREFERENCE."
               (format stream "~A~%"
                       (native-namestring system-file))))))))
   (probe-file output-file))
+
+(defun where-is-system (name)
+  "Return the pathname to the source directory of ASDF system with the
+given NAME, or NIL if no system by that name can be found known."
+  (let ((system (asdf:find-system name nil)))
+    (when system
+      (asdf:system-source-directory system))))
