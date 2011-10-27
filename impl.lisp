@@ -203,7 +203,8 @@
   (:reexport-from #:unix
                   #:unix-rmdir)
   (:reexport-from #:extensions
-                  #:connect-to-inet-socket))
+                  #:connect-to-inet-socket
+                  #:native-namestring))
 
 
 ;;; LispWorks
