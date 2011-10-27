@@ -193,6 +193,19 @@
 (defvar ql-cmucl:*gc-verbose*)
 
 
+;;; Scieneer CL
+
+(define-implementation-package :scl #:ql-scl
+  (:documentation "Scieneer Common Lisp - http://www.scieneer.com/scl/")
+  (:class scl)
+  (:reexport-from #:system
+                  #:make-fd-stream)
+  (:reexport-from #:unix
+                  #:unix-rmdir)
+  (:reexport-from #:extensions
+                  #:connect-to-inet-socket))
+
+
 ;;; LispWorks
 
 (define-implementation-package :lispworks #:ql-lispworks

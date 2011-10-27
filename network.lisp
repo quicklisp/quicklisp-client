@@ -35,6 +35,12 @@
                                :binary-stream-p t
                                :input t
                                :output t)))
+  (:implementation scl
+    (let ((fd (ql-scl:connect-to-inet-socket host port)))
+      (ql-scl:make-fd-stream fd
+			     :element-type '(unsigned-byte 8)
+			     :input t
+			     :output t)))
   (:implementation ecl
     (let* ((endpoint (ql-ecl:host-ent-address
                       (ql-ecl:get-host-by-name host)))
