@@ -155,6 +155,7 @@
           (ensure-release-index-file new-dist)
           (ensure-system-index-file new-dist)
           (enable new-dist)
+          (setf (preference new-dist) (get-universal-time))
           (when old-dist
             (clear-dist-systems old-dist))
           (clear-dist-systems new-dist)
