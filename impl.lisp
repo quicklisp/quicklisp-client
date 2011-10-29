@@ -204,7 +204,7 @@
                   #:unix-rmdir)
   (:reexport-from #:extensions
                   #:connect-to-inet-socket
-                  #:native-namestring))
+                  #:unix-namestring))
 
 
 ;;; LispWorks

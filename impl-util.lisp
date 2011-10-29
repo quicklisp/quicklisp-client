@@ -155,10 +155,7 @@ quicklisp at CL startup."
   (:implementation ccl
     (ql-ccl:native-translated-namestring pathname))
   (:implementation sbcl
-    (ql-sbcl:native-namestring pathname))
-  (:implementation scl
-    (ql-scl:native-namestring pathname)))
-
+    (ql-sbcl:native-namestring pathname)))
 
 
 ;;;
@@ -232,7 +229,7 @@ quicklisp at CL startup."
   (:implementation cmucl
     (ql-cmucl:unix-rmdir (namestring entry)))
   (:implementation scl
-    (ql-scl:unix-rmdir (ql-scl:native-namestring entry)))
+    (ql-scl:unix-rmdir (ql-scl:unix-namestring entry)))
   (:implementation ecl
     (ql-ecl:rmdir entry))
   (:implementation lispworks
