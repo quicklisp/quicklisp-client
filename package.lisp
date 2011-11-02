@@ -265,7 +265,8 @@
            #:use-only-quicklisp-systems
            #:write-asdf-manifest-file
            #:where-is-system
-           #:help))
+           #:help
+           #:register-local-projects))
 
 (in-package #:quicklisp-client)
 
