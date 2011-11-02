@@ -1,5 +1,34 @@
 ;;;; local-projects.lisp
 
+;;;
+;;; Local project support.
+;;;
+;;; Local projects can be placed in <quicklisp>/local-projects/. New
+;;; entries in that directory are automatically scanned for system
+;;; files for use with QL:QUICKLOAD.
+;;;
+;;; This works by keeping a cache of system file pathnames in
+;;; <quicklisp>/local-projects/system-index.txt. Whenever the
+;;; timestamp on the local projects directory is newer than the
+;;; timestamp on the system index file, the entire tree is re-scanned
+;;; and cached.
+;;;
+;;; This will pick up system files that are created as a result of
+;;; creating new project directory in <quicklisp>/local-projects/,
+;;; e.g. unpacking a tarball or zip file, checking out a project from
+;;; version control, etc. It will NOT pick up a system file that is
+;;; added sometime later in a subdirectory; for that, the
+;;; REGISTER-LOCAL-PROJECTS function is needed to rebuild the system
+;;; file index.
+;;;
+;;; In the event there are multiple systems of the same name in the
+;;; directory tree, the one with the shortest pathname namestring is
+;;; used. This is intended to ignore stuff like _darcs pristine
+;;; directories.
+;;;
+;;; Work in progress!
+;;;
+
 (in-package #:quicklisp-client)
 
 (defparameter *local-projects-directory*
@@ -47,3 +76,8 @@
     (let ((system-index (ensure-system-index *local-projects-directory*)))
       (when system-index
         (find-system-in-index system-name system-index)))))
+
+(defun register-local-projects ()
+  "Force a scan of the local projects directory to create the system
+file index."
+  (make-system-index *local-projects-directory*))
