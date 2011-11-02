@@ -63,7 +63,8 @@
            #:probe-directory
            #:directory-entries
            #:delete-directory-tree
-           #:native-namestring))
+           #:native-namestring
+           #:directory-write-date))
 
 (defpackage #:ql-network
   (:documentation

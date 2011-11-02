@@ -21,4 +21,5 @@
                (:file "client")
                (:file "client-update")
                (:file "dist-update")
-               (:file "misc")))
+               (:file "misc")
+               (:file "local-projects")))

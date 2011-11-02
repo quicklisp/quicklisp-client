@@ -159,6 +159,19 @@ quicklisp at CL startup."
 
 
 ;;;
+;;; Directory write date
+;;;
+
+(definterface directory-write-date (pathname)
+  (:documentation "Return the write-date of the directory designated
+  by PATHNAME as a universal time, like file-write-date.")
+  (:implementation t
+    (file-write-date pathname))
+  (:implementation clisp
+    (nth-value 2 (ql-clisp:probe-pathname pathname))))
+
+
+;;;
 ;;; Deleting a directory tree
 ;;;
 

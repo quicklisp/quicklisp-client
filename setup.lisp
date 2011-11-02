@@ -200,6 +200,7 @@
     (setf asdf:*system-definition-search-functions*
           (append asdf:*system-definition-search-functions*
                   (list 'system-definition-searcher))))
+  (pushnew 'local-projects-searcher asdf:*system-definition-search-functions*)
   (let ((files (nconc (directory (qmerge "local-setup/*.lisp"))
                       (directory (qmerge "local-setup/*.cl")))))
     (with-simple-restart (abort "Stop loading local setup files")
