@@ -32,12 +32,15 @@
 (in-package #:quicklisp-client)
 
 (defparameter *local-projects-directory*
-  (qmerge "local-projects/"))
+  (qmerge "local-projects/")
+  "The default local projects directory.")
 
 (defun system-index-file (pathname)
+  "Return the system index file for the directory PATHNAME."
   (merge-pathnames "system-index.txt" pathname))
 
 (defun local-project-system-files (pathname)
+  "Return a list of system files under PATHNAME."
   (let ((wild (merge-pathnames "**/*.asd" pathname)))
     (sort (directory wild)
           #'<
@@ -45,6 +48,8 @@
                  (length (namestring file))))))
 
 (defun make-system-index (pathname)
+  "Create a system index file for all system files under
+PATHNAME. Current format is one native namestring per line."
   (with-open-file (stream (system-index-file pathname)
                           :direction :output
                           :if-exists :rename-and-delete)
@@ -53,18 +58,23 @@
     (probe-file stream)))
 
 (defun find-valid-system-index (pathname)
+  "Find a valid system index file for PATHNAME; one that both exists
+and has a newer timestamp than PATHNAME."
   (let* ((file (system-index-file pathname))
          (probed (probe-file file)))
     (when (and probed
                (<= (directory-write-date pathname)
-                   (directory-write-date probed)))
+                   (file-write-date probed)))
       probed)))
 
 (defun ensure-system-index (pathname)
+  "Find or create a system index file for PATHNAME."
   (or (find-valid-system-index pathname)
       (make-system-index pathname)))
 
 (defun find-system-in-index (system index-file)
+  "If any system pathname in INDEX-FILE has a pathname-name matching
+SYSTEM, return its full pathname."
   (with-open-file (stream index-file)
     (loop for namestring = (read-line stream nil)
           while namestring
@@ -72,6 +82,8 @@
           return (truename namestring))))
 
 (defun local-projects-searcher (system-name)
+  "This function is added to ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*
+to use the local project directory and cache to find systems."
   (when (probe-directory *local-projects-directory*)
     (let ((system-index (ensure-system-index *local-projects-directory*)))
       (when system-index
