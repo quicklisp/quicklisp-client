@@ -31,8 +31,8 @@
 
 (in-package #:quicklisp-client)
 
-(defparameter *local-projects-directory*
-  (qmerge "local-projects/")
+(defparameter *local-project-directories*
+  (list (qmerge "local-projects/"))
   "The default local projects directory.")
 
 (defun system-index-file (pathname)
@@ -84,12 +84,13 @@ SYSTEM, return its full pathname."
 (defun local-projects-searcher (system-name)
   "This function is added to ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*
 to use the local project directory and cache to find systems."
-  (when (probe-directory *local-projects-directory*)
-    (let ((system-index (ensure-system-index *local-projects-directory*)))
-      (when system-index
-        (find-system-in-index system-name system-index)))))
+  (dolist (directory *local-project-directories*)
+    (when (probe-directory directory)
+      (let ((system-index (ensure-system-index directory)))
+        (when system-index
+          (return (find-system-in-index system-name system-index)))))))
 
 (defun register-local-projects ()
   "Force a scan of the local projects directory to create the system
 file index."
-  (make-system-index *local-projects-directory*))
+  (map nil 'make-system-index *local-project-directories*))

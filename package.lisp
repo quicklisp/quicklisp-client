@@ -266,7 +266,9 @@
            #:write-asdf-manifest-file
            #:where-is-system
            #:help
-           #:register-local-projects))
+           #:register-local-projects
+           #:local-projects-searcher
+           #:*local-project-directories*))
 
 (in-package #:quicklisp-client)
 
