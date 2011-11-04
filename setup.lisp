@@ -211,5 +211,6 @@
                          #\.)
             (load file))))))
   (maybe-initial-setup)
+  (ensure-directories-exist (qmerge "local-projects/"))
   (pushnew :quicklisp *features*)
   t)
