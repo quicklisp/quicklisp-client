@@ -210,9 +210,12 @@ quicklisp at CL startup."
                #+lispworks :directories #+lispworks t
                #+lispworks :link-transparency #+lispworks nil))
   (:implementation ecl
-    (declare (ignore directory))
-    (warn "ECL does not support full directory listing")
-    nil)
+    (setf directory (truename directory))
+    (nconc
+     (directory (merge-pathnames *wild-entry* directory)
+                #+ecl :resolve-symlinks #+ecl nil)
+     (directory (merge-pathnames *wild-relative* directory)
+                #+ecl :resolve-symlinks #+ecl nil)))
   (:implementation sbcl
     (directory (merge-pathnames *wild-entry* directory)
                #+sbcl :resolve-symlinks #+sbcl nil)))
