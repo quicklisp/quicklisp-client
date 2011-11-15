@@ -88,7 +88,9 @@ to use the local project directory and cache to find systems."
     (when (probe-directory directory)
       (let ((system-index (ensure-system-index directory)))
         (when system-index
-          (return (find-system-in-index system-name system-index)))))))
+          (let ((system (find-system-in-index system-name system-index)))
+            (when system
+              (return system))))))))
 
 (defun register-local-projects ()
   "Force a scan of the local projects directory to create the system
