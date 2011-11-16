@@ -54,7 +54,8 @@ PATHNAME. Current format is one native namestring per line."
                           :direction :output
                           :if-exists :rename-and-delete)
     (dolist (system-file (local-project-system-files pathname))
-      (write-line (native-namestring system-file) stream))
+      (let ((system-path (enough-namestring system-file pathname)))
+        (write-line (native-namestring system-path) stream)))
     (probe-file stream)))
 
 (defun find-valid-system-index (pathname)
@@ -79,7 +80,7 @@ SYSTEM, return its full pathname."
     (loop for namestring = (read-line stream nil)
           while namestring
           when (string= system (pathname-name namestring))
-          return (truename namestring))))
+          return (truename (merge-pathnames namestring index-file)))))
 
 (defun local-projects-searcher (system-name)
   "This function is added to ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*
