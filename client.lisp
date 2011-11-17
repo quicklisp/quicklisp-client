@@ -81,13 +81,21 @@ in order of descending QL-DIST:PREFERENCE."
                           :direction :output
                           :if-exists if-exists)
     (with-consistent-dists
+      ;; FIXME: Should avoid emitting lines for systems with system
+      ;; files with a pathname-name that does not match the system
+      ;; name. They're not normally loadable anyway.
       (let ((systems (provided-systems t)))
         (dolist (system (sort systems #'>
                               :key #'preference))
-          (let ((system-file (find-asdf-system-file (name system))))
-            (when system-file
-              (format stream "~A~%"
-                      (native-namestring system-file))))))))
+          ;; FIXME: find-asdf-system-file does another find-system
+          ;; behind the scenes. Bogus. Should be a better way to go
+          ;; from system object to system file.
+          (let* ((system-file (find-asdf-system-file (name system)))
+                 (enough (and system-file (enough-namestring system-file
+                                                             output-file)))
+                 (native (and enough (native-namestring enough))))
+            (when native
+              (format stream "~A~%" native)))))))
   (probe-file output-file))
 
 (defun where-is-system (name)
