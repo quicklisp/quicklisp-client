@@ -228,6 +228,13 @@
            #:dependency-tree
            #:clean))
 
+(defpackage #:ql-dist-user
+  (:documentation
+   "A package that uses QL-DIST; useful for playing around in without
+   clobbering any QL-DIST internals.")
+  (:use #:cl
+        #:ql-dist))
+
 (defpackage #:quicklisp-client
   (:documentation
    "The Quicklisp client package, intended for end-user Quicklisp
