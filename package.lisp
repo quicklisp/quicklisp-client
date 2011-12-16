@@ -275,7 +275,8 @@
            #:help
            #:register-local-projects
            #:local-projects-searcher
-           #:*local-project-directories*))
+           #:*local-project-directories*
+           #:list-local-projects))
 
 (in-package #:quicklisp-client)
 

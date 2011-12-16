@@ -93,6 +93,23 @@ to use the local project directory and cache to find systems."
             (when system
               (return system))))))))
 
+(defun list-local-projects ()
+  "Return a list of pathnames to local project system files."
+  (let ((result (make-array 16 :fill-pointer 0 :adjustable t))
+        (seen (make-hash-table :test 'equal)))
+    (dolist (directory *local-project-directories*
+             (coerce result 'list))
+      (let ((index (ensure-system-index directory)))
+        (when index
+          (with-open-file (stream index)
+            (loop for line = (read-line stream nil)
+                  while line do
+                  (let ((pathname (merge-pathnames line index)))
+                    (unless (gethash (pathname-name pathname) seen)
+                      (setf (gethash (pathname-name pathname) seen) t)
+                      (vector-push-extend (merge-pathnames line index)
+                                          result))))))))))
+
 (defun register-local-projects ()
   "Force a scan of the local projects directory to create the system
 file index."
