@@ -427,6 +427,9 @@
   (print-unreadable-object (dist stream :type t)
     (write-string (short-description dist) stream)))
 
+(defun cdb-lookup (dist key cdb)
+  (ql-cdb:lookup key
+                 (relative-to dist cdb)))
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'available-versions-url)))
   (declare (ignore class))
@@ -439,12 +442,16 @@
 
 
 (defmethod provided-releases ((dist dist))
+  ;; FIXME: Should not unconditionally initialize
+  (initialize-release-index dist)
   (loop for release being each hash-value of (release-index dist)
         collect release))
 
 (defmethod provided-systems ((dist dist))
+  ;; FIXME: totally broken
   (loop for system being each hash-value of (system-index dist)
         collect system))
+
 
 (defmethod ensure-release-index-file ((dist dist))
   (let ((pathname (relative-to dist "releases.txt")))
@@ -505,8 +512,29 @@ the given NAME."
     (ql-impl-util:delete-directory-tree (base-directory dist))))
 
 
-(defmethod find-release-in-dist (release dist)
-  (values (gethash release (release-index dist))))
+(defun make-release-from-line (line dist)
+  (let ((release
+         (make-line-instance line 'release
+                             :project-name
+                             :archive-url
+                             :archive-size
+                             :archive-md5
+                             :archive-content-sha1
+                             :prefix
+                             :system-files)))
+    (setf (dist release) dist)
+    (setf (archive-size release)
+          (parse-integer (archive-size release)))
+    release))
+
+(defmethod find-release-in-dist (release-name dist)
+  (let* ((index (release-index dist))
+         (release (gethash release-name index)))
+    (or release
+        (let ((line (cdb-lookup dist release-name "releases.cdb")))
+          (when line
+            (setf (gethash release-name index)
+                  (make-release-from-line line dist)))))))
 
 
 (defparameter *dist-enumeration-functions*
@@ -763,7 +791,8 @@ the given NAME."
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'release-index)))
   (declare (ignore class))
-  (initialize-release-index dist))
+  (setf (slot-value dist 'release-index)
+        (make-hash-table :test 'equal)))
 
 
 ;;;
@@ -828,17 +857,36 @@ the given NAME."
 
 (defmethod slot-unbound (class (release release) (slot (eql 'provided-systems)))
   (declare (ignore class))
-  (initialize-system-index (dist release))
-  (if (slot-boundp release 'provided-systems)
-      (provided-systems release)
-      (setf (provided-systems release) nil)))
+  (setf (slot-value release 'provided-systems)
+        (mapcar (lambda (system-file)
+                  (find-system-in-dist (pathname-name system-file)
+                                       (dist release)))
+                (system-files release))))
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'system-index)))
   (declare (ignore class))
-  (initialize-system-index dist))
+  (setf (slot-value dist 'system-index)
+        (make-hash-table :test 'equal)))
+
+(defun make-system-from-line (line dist)
+  (let ((system (make-line-instance line 'system
+                                    :release
+                                    :system-file-name
+                                    :name
+                                    :required-systems)))
+    (setf (dist system) dist)
+    (setf (release system)
+          (find-release-in-dist (release system) dist))
+    system))
 
 (defmethod find-system-in-dist (system-name dist)
-  (values (gethash system-name (system-index dist))))
+  (let* ((index (system-index dist))
+         (system (gethash system-name index)))
+    (or system
+        (let ((line (cdb-lookup dist system-name "systems.cdb")))
+          (when line
+            (setf (gethash system-name index)
+                  (make-system-from-line line dist)))))))
 
 (defmethod preference ((system system))
   (if (probe-file (preference-file system))
