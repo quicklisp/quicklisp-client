@@ -118,6 +118,14 @@
   (:use #:cl)
   (:export #:gunzip))
 
+(defpackage #:ql-cdb
+  (:documentation
+   "Read and write CDB files; code adapted from ZCDB.")
+  (:use #:cl)
+  (:export #:lookup
+           #:map-cdb
+           #:convert-index-file))
+
 (defpackage #:ql-dist
   (:documentation
    "Generic functions, variables, and classes for interacting with the

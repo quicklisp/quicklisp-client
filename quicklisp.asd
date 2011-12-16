@@ -16,6 +16,7 @@
                (:file "http")
                (:file "deflate")
                (:file "minitar")
+               (:file "cdb")
                (:file "dist")
                (:file "setup")
                (:file "client")
