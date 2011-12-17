@@ -252,10 +252,20 @@
    "Return the pathname for the system index file of DIST, fetching it
    from a remote source first if necessary."))
 
+(defgeneric ensure-system-cdb-file (dist)
+  (:documentation
+   "Return the pathname for the system cdb file of DIST, creating it
+   if necessary."))
+
 (defgeneric ensure-release-index-file (dist)
   (:documentation
    "Return the pathname for the release index file of DIST, fetching
    it from a remote source first if necessary."))
+
+(defgeneric ensure-release-cdb-file (dist)
+  (:documentation
+   "Return the pathname for the release cdb file of DIST, creating it
+   if necessary."))
 
 
 (defgeneric initialize-release-index (dist)
@@ -453,15 +463,31 @@
         collect system))
 
 
+(defmethod ensure-system-index-file ((dist dist))
+  (let ((pathname (relative-to dist "systems.txt")))
+    (or (probe-file pathname)
+        (nth-value 1 (fetch (system-index-url dist) pathname)))))
+
+(defmethod ensure-system-cdb-file ((dist dist))
+  (let* ((system-file (ensure-system-index-file dist))
+         (cdb-file (make-pathname :type "cdb" :defaults system-file)))
+    (or (probe-file cdb-file)
+        (ql-cdb:convert-index-file system-file
+                                   :cdb-file cdb-file
+                                   :index 1))))
+
 (defmethod ensure-release-index-file ((dist dist))
   (let ((pathname (relative-to dist "releases.txt")))
     (or (probe-file pathname)
         (nth-value 1 (fetch (release-index-url dist) pathname)))))
 
-(defmethod ensure-system-index-file ((dist dist))
-  (let ((pathname (relative-to dist "systems.txt")))
-    (or (probe-file pathname)
-        (nth-value 1 (fetch (system-index-url dist) pathname)))))
+(defmethod ensure-release-cdb-file ((dist dist))
+  (let* ((release-file (ensure-release-index-file dist))
+         (cdb-file (make-pathname :type "cdb" :defaults release-file)))
+    (or (probe-file cdb-file)
+        (ql-cdb:convert-index-file release-file
+                                   :cdb-file cdb-file
+                                   :index 0))))
 
 
 (defun dist-name-pathname (name)
@@ -527,11 +553,12 @@ the given NAME."
           (parse-integer (archive-size release)))
     release))
 
-(defmethod find-release-in-dist (release-name dist)
+(defmethod find-release-in-dist (release-name (dist dist))
   (let* ((index (release-index dist))
          (release (gethash release-name index)))
     (or release
-        (let ((line (cdb-lookup dist release-name "releases.cdb")))
+        (let ((line (cdb-lookup dist release-name
+                                (ensure-release-cdb-file dist))))
           (when line
             (setf (gethash release-name index)
                   (make-release-from-line line dist)))))))
@@ -879,11 +906,12 @@ the given NAME."
           (find-release-in-dist (release system) dist))
     system))
 
-(defmethod find-system-in-dist (system-name dist)
+(defmethod find-system-in-dist (system-name (dist dist))
   (let* ((index (system-index dist))
          (system (gethash system-name index)))
     (or system
-        (let ((line (cdb-lookup dist system-name "systems.cdb")))
+        (let ((line (cdb-lookup dist system-name
+                                (ensure-system-cdb-file dist))))
           (when line
             (setf (gethash system-name index)
                   (make-system-from-line line dist)))))))
