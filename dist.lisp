@@ -268,13 +268,9 @@
    if necessary."))
 
 
-(defgeneric initialize-release-index (dist)
+(defgeneric initialize-indexes (dist)
   (:documentation
-   "Initialize the release index of DIST."))
-
-(defgeneric initialize-system-index (dist)
-  (:documentation
-   "Initialize the system index of DIST."))
+   "Initialize the system and release indexes of DIST."))
 
 
 (defgeneric local-archive-file (release)
@@ -422,6 +418,12 @@
    (release-index
     :initarg :release-index
     :accessor release-index)
+   (provided-systems
+    :initarg :provided-systems
+    :accessor provided-systems)
+   (provided-releases
+    :initarg :provided-releases
+    :accessor provided-releases)
    (local-distinfo-file
     :initarg :local-distinfo-file
     :accessor local-distinfo-file))
@@ -451,18 +453,6 @@
     (setf (available-versions-url dist) new-url)))
 
 
-(defmethod provided-releases ((dist dist))
-  ;; FIXME: Should not unconditionally initialize
-  (initialize-release-index dist)
-  (loop for release being each hash-value of (release-index dist)
-        collect release))
-
-(defmethod provided-systems ((dist dist))
-  ;; FIXME: totally broken
-  (loop for system being each hash-value of (system-index dist)
-        collect system))
-
-
 (defmethod ensure-system-index-file ((dist dist))
   (let ((pathname (relative-to dist "systems.txt")))
     (or (probe-file pathname)
@@ -488,6 +478,20 @@
         (ql-cdb:convert-index-file release-file
                                    :cdb-file cdb-file
                                    :index 0))))
+
+(defmethod slot-unbound (class (dist dist) (slot (eql 'provided-systems)))
+  (declare (ignore class))
+  (initialize-indexes dist)
+  (setf (slot-value dist 'provided-systems)
+        (loop for system being each hash-value of (system-index dist)
+              collect system)))
+
+(defmethod slot-unbound (class (dist dist) (slot (eql 'provided-releases)))
+  (declare (ignore class))
+  (initialize-indexes dist)
+  (setf (slot-value dist 'provided-releases)
+        (loop for system being each hash-value of (release-index dist)
+              collect system)))
 
 
 (defun dist-name-pathname (name)
@@ -797,25 +801,6 @@ the given NAME."
             (unless (ignorable line)
               (funcall fun line))))))
 
-(defmethod initialize-release-index ((dist dist))
-  (let ((releases (ensure-release-index-file dist))
-        (index (make-hash-table :test 'equal)))
-    (call-for-each-index-entry
-     releases
-     (lambda (line)
-       (let ((instance (make-line-instance line 'release
-                                           :project-name
-                                           :archive-url
-                                           :archive-size
-                                           :archive-md5
-                                           :archive-content-sha1
-                                           :prefix
-                                           :system-files)))
-         (setf (dist instance) dist)
-         (setf (archive-size instance) (parse-integer (archive-size instance)))
-         (setf (gethash (project-name instance) index) instance))))
-    (setf (release-index dist) index)))
-
 (defmethod slot-unbound (class (dist dist) (slot (eql 'release-index)))
   (declare (ignore class))
   (setf (slot-value dist 'release-index)
@@ -862,7 +847,7 @@ the given NAME."
 (defmethod provided-systems ((system system))
   (list system))
 
-(defmethod initialize-system-index ((dist dist))
+(defmethod initialize-indexes ((dist dist))
   (let ((systems (ensure-system-index-file dist))
         (index (make-hash-table :test 'equal)))
     (call-for-each-index-entry
