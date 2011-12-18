@@ -268,9 +268,13 @@
    if necessary."))
 
 
-(defgeneric initialize-indexes (dist)
+(defgeneric initialize-release-index (dist)
   (:documentation
-   "Initialize the system and release indexes of DIST."))
+   "Initialize the release index of DIST."))
+
+(defgeneric initialize-system-index (dist)
+  (:documentation
+   "Initialize the system index of DIST."))
 
 
 (defgeneric local-archive-file (release)
@@ -481,14 +485,14 @@
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'provided-systems)))
   (declare (ignore class))
-  (initialize-indexes dist)
+  (initialize-system-index dist)
   (setf (slot-value dist 'provided-systems)
         (loop for system being each hash-value of (system-index dist)
               collect system)))
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'provided-releases)))
   (declare (ignore class))
-  (initialize-indexes dist)
+  (initialize-release-index dist)
   (setf (slot-value dist 'provided-releases)
         (loop for system being each hash-value of (release-index dist)
               collect system)))
@@ -847,9 +851,32 @@ the given NAME."
 (defmethod provided-systems ((system system))
   (list system))
 
-(defmethod initialize-indexes ((dist dist))
+(defmethod initialize-release-index ((dist dist))
+  (let ((releases (ensure-release-index-file dist))
+        (index (release-index dist)))
+    (call-for-each-index-entry
+     releases
+     (lambda (line)
+       (let ((instance (make-line-instance line 'release
+                                           :project-name
+                                           :archive-url
+                                           :archive-size
+                                           :archive-md5
+                                           :archive-content-sha1
+                                           :prefix
+                                           :system-files)))
+         ;; Don't clobber anything previously loaded via CDB
+         (unless (gethash (project-name instance) index)
+           (setf (dist instance) dist)
+           (setf (archive-size instance)
+                 (parse-integer (archive-size instance)))
+           (setf (gethash (project-name instance) index) instance)))))
+    (setf (release-index dist) index)))
+
+(defmethod initialize-system-index ((dist dist))
+  (initialize-release-index dist)
   (let ((systems (ensure-system-index-file dist))
-        (index (make-hash-table :test 'equal)))
+        (index (system-index dist)))
     (call-for-each-index-entry
      systems
      (lambda (line)
@@ -858,17 +885,21 @@ the given NAME."
                                            :system-file-name
                                            :name
                                            :required-systems)))
-         (let ((release (find-release-in-dist (release instance) dist)))
-           (setf (release instance) release)
-           (if (slot-boundp release 'provided-systems)
-               (pushnew instance (provided-systems release))
-               (setf (provided-systems release) (list instance))))
-         (setf (dist instance) dist)
-         (setf (gethash (name instance) index) instance))))
+         ;; Don't clobber anything previously loaded via CDB
+         (unless (gethash (name instance) index)
+           (let ((release (find-release-in-dist (release instance) dist)))
+             (setf (release instance) release)
+             (if (slot-boundp release 'provided-systems)
+                 (pushnew instance (provided-systems release))
+                 (setf (provided-systems release) (list instance))))
+           (setf (dist instance) dist)
+           (setf (gethash (name instance) index) instance)))))
     (setf (system-index dist) index)))
 
 (defmethod slot-unbound (class (release release) (slot (eql 'provided-systems)))
   (declare (ignore class))
+  ;; FIXME: This isn't right, since the system index has systems that
+  ;; don't match the defining system file name.
   (setf (slot-value release 'provided-systems)
         (mapcar (lambda (system-file)
                   (find-system-in-dist (pathname-name system-file)
