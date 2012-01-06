@@ -468,7 +468,7 @@
     (or (probe-file cdb-file)
         (ql-cdb:convert-index-file system-file
                                    :cdb-file cdb-file
-                                   :index 1))))
+                                   :index 2))))
 
 (defmethod ensure-release-index-file ((dist dist))
   (let ((pathname (relative-to dist "releases.txt")))
