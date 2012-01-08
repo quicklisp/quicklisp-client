@@ -117,6 +117,8 @@
       (remove-installed "releases")
       (delete-file-if-exists (relative-to old-dist "releases.txt"))
       (delete-file-if-exists (relative-to old-dist "systems.txt"))
+      (delete-file-if-exists (relative-to old-dist "releases.cdb"))
+      (delete-file-if-exists (relative-to old-dist "systems.cdb"))
       (replace-file (local-distinfo-file new-dist)
                     (local-distinfo-file old-dist))
       (setf new-dist (find-dist (name new-dist)))
