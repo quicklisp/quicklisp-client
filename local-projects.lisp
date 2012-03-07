@@ -114,3 +114,7 @@ to use the local project directory and cache to find systems."
   "Force a scan of the local projects directory to create the system
 file index."
   (map nil 'make-system-index *local-project-directories*))
+
+(defun list-local-systems ()
+  "Return a list of local project system names."
+  (mapcar #'pathname-name (list-local-projects)))
