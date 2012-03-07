@@ -62,8 +62,11 @@
 
 (defun uninstall (system-name)
   (let ((system (find-system system-name)))
-    (when system
-      (ql-dist:uninstall system))))
+    (cond (system
+           (ql-dist:uninstall system))
+          (t
+           (warn "Unknown system ~S" system-name)
+           nil))))
 
 (defun uninstall-dist (name)
   (let ((dist (find-dist name)))
