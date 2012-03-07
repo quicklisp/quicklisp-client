@@ -2,8 +2,14 @@
 
 (in-package #:quicklisp-client)
 
-(defvar *quickload-verbose* nil)
-(defvar *quickload-prompt* nil)
+(defvar *quickload-verbose* nil
+  "When NIL, show terse output when quickloading a system. Otherwise,
+  show normal compile and load output.")
+
+(defvar *quickload-prompt* nil
+  "When NIL, quickload systems without prompting for enter to
+  continue, otherwise proceed directly without user intervention.")
+
 (defvar *quickload-explain* t)
 
 (define-condition system-not-quickloadable (error)
@@ -15,7 +21,9 @@
   (:documentation
    "Load SYSTEMS the quicklisp way. SYSTEMS is a designator for a list
    of things to be loaded.")
-  (:method (systems &key prompt verbose &allow-other-keys)
+  (:method (systems &key
+            (prompt *quickload-prompt*)
+            (verbose *quickload-verbose*) &allow-other-keys)
     (unless (consp systems)
       (setf systems (list systems)))
     (dolist (thing systems systems)
