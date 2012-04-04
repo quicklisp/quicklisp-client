@@ -200,6 +200,7 @@
     (setf asdf:*system-definition-search-functions*
           (append asdf:*system-definition-search-functions*
                   (list 'local-projects-searcher
+                        'packed-projects-searcher
                         'system-definition-searcher))))
   (let ((files (nconc (directory (qmerge "local-init/*.lisp"))
                       (directory (qmerge "local-init/*.cl")))))
