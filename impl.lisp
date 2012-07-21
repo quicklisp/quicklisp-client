@@ -240,6 +240,24 @@
                   #:socket-connect
                   #:socket-make-stream))
 
+;;; MKCL
+
+(define-implementation-package :mkcl #:ql-mkcl
+  (:documentation "ManKai Common Lisp - http://common-lisp.net/project/mkcl/")
+  (:class mkcl)
+  (:prep
+   (require 'sockets))
+  (:intern #:host-network-address)
+  (:reexport-from #:si
+                  #:rmdir
+                  #:file-kind)
+  (:reexport-from #:sb-bsd-sockets
+                  #:get-host-by-name
+                  #:host-ent-address
+                  #:inet-socket
+                  #:socket-connect
+                  #:socket-make-stream))
+
 
 ;;; SBCL
 

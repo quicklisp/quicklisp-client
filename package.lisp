@@ -48,6 +48,7 @@
            #:ecl
            #:gcl
            #:lispworks
+           #:mkcl
            #:scl
            #:sbcl))
 
