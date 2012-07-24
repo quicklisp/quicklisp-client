@@ -54,13 +54,13 @@
                                  :output t
                                  :buffering :full)))
   (:implementation mkcl
-    (let* ((endpoint (qlqs-mkcl:host-ent-address
-                      (qlqs-mkcl:get-host-by-name host)))
-           (socket (make-instance 'qlqs-mkcl:inet-socket
+    (let* ((endpoint (ql-mkcl:host-ent-address
+                      (ql-mkcl:get-host-by-name host)))
+           (socket (make-instance 'ql-mkcl:inet-socket
                                   :protocol :tcp
                                   :type :stream)))
-      (qlqs-mkcl:socket-connect socket endpoint port)
-      (qlqs-mkcl:socket-make-stream socket
+      (ql-mkcl:socket-connect socket endpoint port)
+      (ql-mkcl:socket-make-stream socket
                                    :element-type '(unsigned-byte 8)
                                    :input t
                                    :output t
