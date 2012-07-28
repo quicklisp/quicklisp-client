@@ -66,6 +66,8 @@
     ".clisprc.lisp")
   (:implementation ecl
     ".eclrc")
+  (:implementation mkcl
+    ".mkclrc")
   (:implementation lispworks
     ".lispworks")
   (:implementation sbcl
@@ -216,6 +218,11 @@ quicklisp at CL startup."
                 #+ecl :resolve-symlinks #+ecl nil)
      (directory (merge-pathnames *wild-relative* directory)
                 #+ecl :resolve-symlinks #+ecl nil)))
+  (:implementation mkcl
+    (setf directory (truename directory))
+    (nconc
+     (directory (merge-pathnames *wild-entry* directory))
+     (directory (merge-pathnames *wild-relative* directory))))
   (:implementation sbcl
     (directory (merge-pathnames *wild-entry* directory)
                #+sbcl :resolve-symlinks #+sbcl nil)))
@@ -248,6 +255,8 @@ quicklisp at CL startup."
     (ql-scl:unix-rmdir (ql-scl:unix-namestring entry)))
   (:implementation ecl
     (ql-ecl:rmdir entry))
+  (:implementation mkcl
+    (ql-mkcl:rmdir entry))
   (:implementation lispworks
     (ql-lispworks:delete-directory entry))
   (:implementation sbcl

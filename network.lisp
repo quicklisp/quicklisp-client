@@ -53,6 +53,18 @@
                                  :input t
                                  :output t
                                  :buffering :full)))
+  (:implementation mkcl
+    (let* ((endpoint (ql-mkcl:host-ent-address
+                      (ql-mkcl:get-host-by-name host)))
+           (socket (make-instance 'ql-mkcl:inet-socket
+                                  :protocol :tcp
+                                  :type :stream)))
+      (ql-mkcl:socket-connect socket endpoint port)
+      (ql-mkcl:socket-make-stream socket
+                                   :element-type '(unsigned-byte 8)
+                                   :input t
+                                   :output t
+                                   :buffering :full)))
   (:implementation lispworks
     (ql-lispworks:open-tcp-stream host port
                                   :direction :io
