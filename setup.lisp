@@ -56,7 +56,10 @@
     :reader system-not-found-name))
   (:report (lambda (condition stream)
              (format stream "System ~S not found"
-                     (system-not-found-name condition)))))
+                     (system-not-found-name condition))))
+  (:documentation "This condition is signaled by QUICKLOAD when a
+  system given to load is not available via ASDF or a Quicklisp
+  dist."))
 
 (defun compute-load-strategy (name)
   (setf name (string-downcase name))

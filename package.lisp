@@ -263,6 +263,8 @@
            #:*quickload-prompt*
            #:*quickload-verbose*
            #:*quickload-explain*
+           #:system-not-found
+           #:system-not-found-name
            #:uninstall
            #:uninstall-dist
            #:qmerge
