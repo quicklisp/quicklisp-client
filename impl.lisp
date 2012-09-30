@@ -143,11 +143,11 @@
 
 ;;; Armed Bear Common Lisp
 
-(define-implementation-package :abcl #:qlb-abcl
+(define-implementation-package :abcl #:ql-abcl
   (:documentation
    "Armed Bear Common Lisp - http://common-lisp.net/project/armedbear/")
   (:class abcl)
-  (:reexport-from #:system
+  (:reexport-from #:ext
                   #:make-socket
                   #:get-socket-stream))
 

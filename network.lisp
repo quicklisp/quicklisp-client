@@ -21,8 +21,8 @@
     (ql-allegro:make-socket :remote-host host
                             :remote-port port))
   (:implementation abcl
-    (let ((socket (qlb-abcl:make-socket host port)))
-      (qlb-abcl:get-socket-stream socket :element-type '(unsigned-byte 8))))
+    (let ((socket (ql-abcl:make-socket host port)))
+      (ql-abcl:get-socket-stream socket :element-type '(unsigned-byte 8))))
   (:implementation ccl
     (ql-ccl:make-socket :remote-host host
                         :remote-port port))
