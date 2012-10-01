@@ -1035,7 +1035,8 @@ FUN."
     (dolist (system (provided-systems t))
       (when (or (search term (name system))
                 (search term (name (release system))))
-        (format t "~A~%" system)))))
+        (format t "~A~%" system)))
+    (values)))
 
 
 ;;;
