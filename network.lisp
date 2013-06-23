@@ -88,7 +88,15 @@
   (:documentation "Read from CONNECTION into BUFFER. Returns the
   number of octets read.")
   (:implementation t
-    (read-sequence buffer connection))
+    ;; ECL bug #3161786.
+    (if (equal (stream-element-type connection)
+               '(unsigned-byte 8))
+      (read-sequence buffer connection)
+      (let ((length (array-dimension buffer 0)))
+        (loop for i from 0 to (1- length) do
+          (setf (aref buffer i)
+                (read-byte connection)))
+        length)))
   (:implementation allegro
     (ql-allegro:read-vector buffer connection))
   (:implementation clisp
