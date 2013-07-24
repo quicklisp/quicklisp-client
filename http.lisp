@@ -319,6 +319,8 @@
   (subseq (storage sink) 0))
 
 (defvar *proxy-url* (config-value "proxy-url"))
+(defvar *proxy-user* (config-value "proxy-user"))
+(defvar *proxy-pass* (config-value "proxy-pass"))
 
 (defun full-proxy-path (host port path)
   (format nil "~:[http~;https~]://~A~:[:~D~;~*~]~A"
@@ -354,6 +356,90 @@ information."
             (encode (lisp-implementation-type))
             (version-string (lisp-implementation-version)))))
 
+(defvar *BASE64TBL* "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-")
+
+(defun to-bit (num)
+  "convert 1 octet to binary(0/1) list"
+  (loop for x from 7 downto 0 collect (ldb (byte 1 x) num)))
+
+(defun string-to-bit (str)
+  "convert string to binary(0/1) list"
+  (map 'list #'to-bit (map 'list #'char-code str)))
+
+(defun flatten (x)
+  "flatten list"
+  (labels ((rec (x acc)
+             (cond ((null x) acc)
+                   ((atom x) (cons x acc))
+                   (t (rec (car x) (rec (cdr x) acc))))))
+    (rec x nil)))
+
+(defun take-list (list num)
+  "return taken from list(first arguments) passed as the num(second argument) and rest of the list"
+  (labels ((take-n (list num acc)
+             (if (or (<= num 0)
+                     (null list))
+                 (values (nreverse acc) list)
+                 (take-n (cdr list) (- num 1) (cons (car list) acc)))))
+    (take-n list num '())))
+
+(defun split (list num)
+  "split list. each list has num(second arguments) items."
+  (labels ((split (list acc)
+             (multiple-value-bind (six rest)
+                 (take-list list num)
+               (if (null rest)
+                   (nreverse (cons six acc))
+                   (split rest (cons six acc))))))
+    (split list '())))
+
+(defun rpad (list padsize &key (pad 0))
+  "if each list's length less than padsize(second arguments), padding pad(default 0) on right side."
+  (labels ((right-padding (list padsize acc)
+             (if (null list)
+                 (nreverse acc)
+                 (let ((item (car list)))
+                   (if (< (length item) padsize)
+                       (right-padding (cdr list) padsize (cons
+                                                           (append
+                                                             item
+                                                             (make-list
+                                                               (- padsize (length item))
+                                                               :initial-element pad))
+                                                           acc))
+                       (right-padding (cdr list) padsize (cons item acc)))))))
+    (right-padding list padsize '())))
+
+(defun bit-to-num (list)
+  "convert binary(0/1) list to number"
+  (let ((ms (length list)))
+    (loop for x in list
+          for y downfrom (1- ms)
+          sum (ash x y))))
+
+
+(defun base64-enc (str)
+  "create base64 encoded string from argument"
+  (format nil "~{~{~A~}~}"
+    (rpad
+      (split
+        (map 'list #'(lambda (x)
+                       (aref *BASE64TBL* x))
+              (map 'list #'bit-to-num
+                   (rpad
+                     (split
+                       (flatten
+                         (string-to-bit str))
+                       6)
+                     6)))
+        4)
+    4 :pad #\=)))
+
+(defun make-basic-authentication (user password)
+  "create basic authentication string"
+  (base64-enc (format nil "~A:~A" user password)))
+
+
 (defun make-request-buffer (host port path &key (method "GET"))
   "Return an octet vector suitable for sending as an HTTP 1.1 request."
   (setf method (string method))
@@ -366,6 +452,8 @@ information."
       (add-line method " " path " HTTP/1.1")
       (add-line "Host: " host (if (= port 80) ""
                                   (format nil ":~D" port)))
+      (when (and *proxy-url* *proxy-user* *proxy-pass*)
+        (add-line "Proxy-Authorization: Basic " (make-basic-authentication *proxy-user* *proxy-pass*)))
       (add-line "Connection: close")
       (add-line "User-Agent: " (user-agent-string))
       (add-newline sink)
