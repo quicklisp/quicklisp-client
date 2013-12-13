@@ -41,11 +41,14 @@
 
 (defun local-project-system-files (pathname)
   "Return a list of system files under PATHNAME."
-  (let ((wild (merge-pathnames "**/*.asd" pathname)))
-    (sort (directory wild)
-          #'<
-          :key (lambda (file)
-                 (length (namestring file))))))
+  (let* ((wild (merge-pathnames "**/*.asd" pathname))
+         (files (sort (directory wild)
+                      #'string<
+                      :key #'namestring)))
+    (stable-sort files
+                 #'<
+                 :key (lambda (file)
+                        (length (namestring file))))))
 
 (defun make-system-index (pathname)
   "Create a system index file for all system files under
