@@ -110,8 +110,7 @@
   (:documentation
    "A simple implementation of unpacking the 'tar' file format.")
   (:use #:cl)
-  (:export #:tarball-contents
-           #:unpack-tarball))
+  (:export #:unpack-tarball))
 
 (defpackage #:ql-gunzipper
   (:documentation
