@@ -195,20 +195,31 @@ dependencies too if possible."
 (defvar *initial-dist-url*
   "http://beta.quicklisp.org/dist/quicklisp.txt")
 
+(defun dists-initialized-p ()
+  (not (not (ignore-errors (truename (qmerge "dists/"))))))
+
+(defun quickstart-parameter (name &optional default)
+  (let* ((package (find-package '#:quicklisp-quickstart))
+         (symbol (and package (find-symbol (string '#:*quickstart-parameters*)
+                                           package)))
+         (value (and symbol (symbol-value symbol)))
+         (parameter (and value (getf name value))))
+    (or parameter default)))
+
 (defun maybe-initial-setup ()
-  ;; Is this running under the quicklisp bootstrap?
-  (let ((bootstrap-package (find-package 'quicklisp-quickstart)))
-    (when bootstrap-package
-      (let* ((proxy (find-symbol (string '#:*proxy-url*) bootstrap-package))
-             (proxy-value (and proxy (symbol-value proxy))))
-        (when (and proxy-value (not *proxy-url*))
-          (setf *proxy-url* proxy-value)
-          (setf (config-value "proxy-url") proxy-value)))))
-  (unless (ignore-errors (truename (qmerge "dists/")))
-    (let ((target (qmerge "dists/quicklisp/distinfo.txt")))
-      (ensure-directories-exist target)
-      (fetch *initial-dist-url* target)
-      (enable (find-dist "quicklisp")))))
+  "Run the steps needed when Quicklisp setup is run for the first time
+after the quickstart installation."
+  (let ((quickstart-proxy-url (quickstart-parameter :proxy-url))
+        (quickstart-initial-dist-url (quickstart-parameter :initial-dist-url)))
+    (when (and quickstart-proxy-url (not *proxy-url*))
+      (setf *proxy-url* quickstart-proxy-url)
+      (setf (config-value "proxy-url") quickstart-proxy-url))
+    (unless (dists-initialized-p)
+      (let ((target (qmerge "dists/quicklisp/distinfo.txt"))
+            (url (or quickstart-initial-dist-url
+                     *initial-dist-url*)))
+        (ensure-directories-exist target)
+        (install-dist url :prompt nil)))))
 
 (defun setup ()
   (unless (member 'system-definition-searcher
