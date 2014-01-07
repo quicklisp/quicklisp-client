@@ -202,8 +202,8 @@ dependencies too if possible."
   (let* ((package (find-package '#:quicklisp-quickstart))
          (symbol (and package (find-symbol (string '#:*quickstart-parameters*)
                                            package)))
-         (value (and symbol (symbol-value symbol)))
-         (parameter (and value (getf name value))))
+         (plist (and symbol (symbol-value symbol)))
+         (parameter (and value (getf plist name))))
     (or parameter default)))
 
 (defun maybe-initial-setup ()
