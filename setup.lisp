@@ -203,7 +203,7 @@ dependencies too if possible."
          (symbol (and package (find-symbol (string '#:*quickstart-parameters*)
                                            package)))
          (plist (and symbol (symbol-value symbol)))
-         (parameter (and value (getf plist name))))
+         (parameter (and plist (getf plist name))))
     (or parameter default)))
 
 (defun maybe-initial-setup ()
