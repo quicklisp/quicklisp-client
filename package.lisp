@@ -13,7 +13,9 @@
            #:ensure-file-exists
            #:split-spaces
            #:first-line
-           #:file-size))
+           #:file-size
+           #:safely-read
+           #:safely-read-file))
 
 (defpackage #:ql-setup
   (:documentation
