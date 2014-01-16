@@ -68,7 +68,7 @@
 (defun fetch-client-info (url)
   (let ((info-file (qmerge "tmp/client-info.sexp")))
     (delete-file-if-exists info-file)
-    (fetch url info-file)
+    (fetch url info-file :quietly t)
     (handler-case
         (load-client-info info-file)
       ;; FIXME: So many other things could go wrong here; I think it
@@ -151,5 +151,7 @@
                      (press-enter-to-continue))
              (install-client newest-info local-info)))
           (t
-           (format t "The most up-to-date client is already installed.~%"))))
+           (format t "The most up-to-date client, version ~A, ~
+                      is already installed.~%"
+                   (version local-info)))))
   t)
