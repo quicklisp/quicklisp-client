@@ -22,7 +22,10 @@
     :initarg :subscription-url)
    (plist
     :reader plist
-    :initarg :plist)))
+    :initarg :plist)
+   (source-file
+    :reader source-file
+    :initarg :source-file)))
 
 (defmethod print-object ((client-info client-info) stream)
   (print-unreadable-object (client-info stream :type t)
@@ -59,7 +62,8 @@
                      :client-tar-url client-tar-url
                      :version version
                      :subscription-url subscription-url
-                     :plist plist))))
+                     :plist plist
+                     :source-file (probe-file file)))))
 
 (defun fetch-client-info (url)
   (let ((info-file (qmerge "tmp/client-info.sexp")))
@@ -131,13 +135,14 @@
                     (version local-info)))
     (rename-directory new-quicklisp-directory current-quicklisp-directory)
     (replace-file local-setup (qmerge "setup.lisp"))
-    (replace-file local-asdf (qmerge "asdf.lisp"))))
+    (replace-file local-asdf (qmerge "asdf.lisp"))
+    (replace-file (source-file newest-info) (qmerge "client-info.sexp"))))
 
 (defun update-client (&key (prompt t))
   (let* ((local-info (local-client-info))
          (newest-info (newest-client-info local-info)))
     (cond ((null newest-info)
-           (format t "No updates for this client are available.~%"))
+           (format t "No client update available.~%"))
           ((client-version-lessp local-info newest-info)
            (format t "Updating client from version ~A to version ~A.~%"
                    (version local-info)
@@ -146,6 +151,5 @@
                      (press-enter-to-continue))
              (install-client newest-info local-info)))
           (t
-           (format t "The most up-to-date client is already installed.~%")
-           )))
+           (format t "The most up-to-date client is already installed.~%"))))
   t)
