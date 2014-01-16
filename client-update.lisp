@@ -2,35 +2,83 @@
 
 (in-package #:quicklisp-client)
 
-(defun version-from-file (file)
-  (with-open-file (stream file)
-    (let ((version-string (read-line stream)))
-      (when (every #'digit-char-p version-string)
-        (values (parse-integer version-string))))))
+(defparameter *client-base-url* "http://zeta.quicklisp.org/")
 
-(defun local-version ()
-  (version-from-file (qmerge "quicklisp/version.txt")))
+(defclass client-info ()
+  ((setup-url
+    :reader setup-url
+    :initarg :setup-url)
+   (asdf-url
+    :reader asdf-url
+    :initarg :asdf-url)
+   (client-tar-url
+    :reader client-tar-url
+    :initarg :client-tar-url)
+   (version
+    :reader version
+    :initarg :version)
+   (subscription-url
+    :reader subscription-url
+    :initarg :subscription-url)
+   (plist
+    :reader plist
+    :initarg :plist)))
 
-(defun upstream-version ()
-  (let ((local-file (qmerge "tmp/client-update/version.txt")))
-    (ensure-directories-exist local-file)
-    (fetch "http://beta.quicklisp.org/quickstart/version.txt"
-           local-file :quietly t)
-    (prog1 (version-from-file local-file)
-      (delete-file local-file))))
+(defmethod print-object ((client-info client-info) stream)
+  (print-unreadable-object (client-info stream :type t)
+    (prin1 (version client-info) stream)))
 
-(defun update-available-p ()
-  (< (local-version) (upstream-version)))
+(defun format-client-url (path &rest format-arguments)
+  (if format-arguments
+      (format nil "~A~{~}" *client-base-url* path format-arguments)
+      (format nil "~A~A" *client-base-url* path)))
 
-(defun upstream-archive-url (version)
-  (format nil "http://beta.quicklisp.org/quickstart/quicklisp-~D.tgz"
-          version))
+(defun client-info-url-from-version (version)
+  (format-client-url "client/~A/client-info.sexp" version))
 
-(defvar *upstream-asdf-url*
-  "http://beta.quicklisp.org/quickstart/asdf.lisp")
+(define-condition invalid-client-info (error)
+  ((plist
+    :initarg plist
+    :reader invalid-client-info-plist)))
 
-(defvar *upstream-setup-url*
-  "http://beta.quicklisp.org/quickstart/setup.lisp")
+(defun load-client-info (file)
+  (let ((plist (safely-read-file file)))
+    ;; FIXME: Should institute some kind of client-info plist format
+    ;; versioning & checking
+    (destructuring-bind (&key setup-url asdf-url
+                              client-tar-url subscription-url
+                              version
+                              &allow-other-keys)
+        plist
+      (unless (and setup-url asdf-url client-tar-url version)
+        (error 'invalid-client-info
+               :plist plist))
+      (make-instance 'client-info
+                     :setup-url setup-url
+                     :asdf-url asdf-url
+                     :client-tar-url client-tar-url
+                     :version version
+                     :subscription-url subscription-url
+                     :plist plist))))
+
+(defun fetch-client-info (url)
+  (let ((info-file (qmerge "tmp/client-info.sexp")))
+    (delete-file-if-exists info-file)
+    (fetch url info-file)
+    (handler-case
+        (load-client-info info-file)
+      ;; FIXME: So many other things could go wrong here; I think it
+      ;; would be nice to catch and report them clearly as bogus URLs
+      (invalid-client-info ()
+        (error "Invalid client info URL -- ~A" url)))))
+
+(defun local-client-info ()
+  (load-client-info (qmerge "client-info.sexp")))
+
+(defun newest-client-info (&optional (info (local-client-info)))
+  (let ((latest (subscription-url info)))
+    (when latest
+      (fetch-client-info latest))))
 
 (defun retirement-directory (base)
   (let ((suffix 0))
@@ -42,40 +90,62 @@
         (unless (probe-directory dir)
           (return dir))))))
 
+(defun retire (directory base)
+  (let ((retirement-home (qmerge "retired/"))
+        (from (truename directory)))
+    (ensure-directories-exist retirement-home)
+    (let* ((*default-pathname-defaults* retirement-home)
+           (to (retirement-directory base)))
+      (rename-directory from to)
+      to)))
+
+
+(defun client-version-lessp (client-info-1 client-info-2)
+  (string-lessp (version client-info-1)
+                (version client-info-2)))
+
+(defun client-update-scratch-directory (client-info)
+  (qmerge (make-pathname :directory
+                         (list :relative
+                               "tmp"
+                               "client-update"
+                               (version client-info)))))
+
+(defun install-client (newest-info local-info)
+  (let* ((work-directory (client-update-scratch-directory newest-info))
+         (current-quicklisp-directory (qmerge "quicklisp/"))
+         (new-quicklisp-directory
+          (merge-pathnames "quicklisp/" work-directory))
+         (local-temp-tar (merge-pathnames "quicklisp.tar" work-directory))
+         (local-setup (merge-pathnames "setup.lisp" work-directory))
+         (local-asdf (merge-pathnames "asdf.lisp" work-directory)))
+    (ensure-directories-exist work-directory)
+    (fetch (client-tar-url newest-info) local-temp-tar)
+    (unpack-tarball local-temp-tar :directory work-directory)
+    ;; FIXME: could compare URLs or some other property to avoid
+    ;; downloading these every time.
+    (fetch (setup-url newest-info) local-setup)
+    (fetch (asdf-url newest-info) local-asdf)
+    (retire (qmerge "quicklisp/")
+            (format nil "quicklisp-~A"
+                    (version local-info)))
+    (rename-directory new-quicklisp-directory current-quicklisp-directory)
+    (replace-file local-setup (qmerge "setup.lisp"))
+    (replace-file local-asdf (qmerge "asdf.lisp"))))
+
 (defun update-client (&key (prompt t))
-  (let ((upstream-version (upstream-version))
-        (local-version (local-version)))
-    (when (<= upstream-version local-version)
-      (format t "Installed version ~D is as new as upstream version ~D. No update.~%"
-              local-version upstream-version)
-      (return-from update-client t))
-    (format t "Updating from version ~D to version ~D.~%"
-            local-version upstream-version)
-    (when prompt
-      (unless (press-enter-to-continue)
-        (return-from update-client nil)))
-    (let* ((work-dir (qmerge (make-pathname
-                              :directory
-                              (list :relative
-                                    "tmp"
-                                    "client-update"
-                                    (princ-to-string upstream-version)))))
-           (upstream-archive (merge-pathnames "quicklisp.tgz" work-dir))
-           (upstream-tar (merge-pathnames "quicklisp.tar" work-dir))
-           (upstream-unpacked (merge-pathnames "quicklisp/" work-dir))
-           (retired (retirement-directory (format nil "quicklisp-~D"
-                                                  local-version)))
-           (current-dir (qmerge "quicklisp/")))
-      (ensure-directories-exist (qmerge "retired/"))
-      (ensure-directories-exist upstream-archive)
-      (fetch (upstream-archive-url upstream-version) upstream-archive)
-      (gunzip upstream-archive upstream-tar)
-      (unpack-tarball upstream-tar :directory work-dir)
-      (rename-directory current-dir retired)
-      (rename-directory upstream-unpacked current-dir)
-      ;; A little crude; should version these, too
-      (fetch *upstream-setup-url* (qmerge "setup.lisp"))
-      (fetch *upstream-asdf-url* (qmerge "asdf.lisp"))
-      (format t "~&New quicklisp client installed. ~
-                   It will take effect on restart.~%")
-      t)))
+  (let* ((local-info (local-client-info))
+         (newest-info (newest-client-info local-info)))
+    (cond ((null newest-info)
+           (format t "No updates for this client are available.~%"))
+          ((client-version-lessp local-info newest-info)
+           (format t "Updating client from version ~A to version ~A.~%"
+                   (version local-info)
+                   (version newest-info))
+           (when (or (not prompt)
+                     (press-enter-to-continue))
+             (install-client newest-info local-info)))
+          (t
+           (format t "The most up-to-date client is already installed.~%")
+           )))
+  t)
