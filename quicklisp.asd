@@ -20,6 +20,7 @@
                (:file "dist")
                (:file "setup")
                (:file "client")
+               (:file "client-info")
                (:file "client-update")
                (:file "dist-update")
                (:file "misc")

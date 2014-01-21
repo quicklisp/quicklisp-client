@@ -277,6 +277,8 @@
            #:provided-systems
            #:system-apropos
            #:system-list
+           #:client-version
+           #:client-url
            #:update-client
            #:update-dist
            #:update-all-dists
