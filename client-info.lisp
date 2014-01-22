@@ -7,16 +7,53 @@
 ;;; Information for checking the validity of files fetched for
 ;;; installing/updating the client code.
 
-(defgeneric setup-file-expected-size (client-info))
-(defgeneric setup-file-sha256 (client-info))
+(defclass client-file-info ()
+  ((plist-key
+    :initarg :plist-key
+    :reader plist-key)
+   (file-url
+    :initarg :url
+    :reader file-url)
+   (name
+    :reader name
+    :initarg :name)
+   (size
+    :initarg :size
+    :reader size)
+   (md5
+    :reader md5
+    :initarg :md5)
+   (sha256
+    :reader sha256
+    :initarg :sha256)
+   (plist
+    :reader plist
+    :initarg :plist)))
 
-(defgeneric asdf-file-expected-size (client-info))
-(defgeneric asdf-file-sha256 (client-info))
+(defmethod print-object ((info client-file-info) stream)
+  (print-unreadable-object (info stream :type t)
+    (format stream "~S ~D ~S"
+            (name info)
+            (size info)
+            (md5 info))))
 
-(defgeneric client-tar-file-expected-size (client-info))
-(defgeneric client-tar-file-sha256 (client-info))
+(defclass asdf-file-info (client-file-info)
+  ()
+  (:default-initargs
+   :plist-key :asdf
+   :name "asdf.lisp"))
 
-;;; TODO: check cryptographic digests too.
+(defclass setup-file-info (client-file-info)
+  ()
+  (:default-initargs
+   :plist-key :setup
+   :name "setup.lisp"))
+
+(defclass client-tar-file-info (client-file-info)
+  ()
+  (:default-initargs
+   :plist-key :client-tar
+   :name "quicklisp.tar"))
 
 (define-condition invalid-client-file (error)
   ((file
@@ -45,58 +82,18 @@
              :expected-size expected-size
              :actual-size actual-size))))
 
-(defgeneric check-setup-file (file client-info)
-  (:method (file client-info)
-    (check-client-file-size file (setup-file-expected-size client-info))))
+;;; TODO: check cryptographic digests too.
 
-(defgeneric check-asdf-file (file client-info)
-  (:method (file client-info)
-    (check-client-file-size file (asdf-file-expected-size client-info))))
+(defgeneric check-client-file (file client-file-info)
+  (:documentation
+   "Signal an INVALID-CLIENT-FILE error if FILE does not match the
+   metadata in CLIENT-FILE-INFO.")
+  (:method (file client-file-info)
+    (check-client-file-size file (size client-file-info))
+    client-file-info))
 
-(defgeneric check-client-tar-file (file client-info)
-  (:method (file client-info)
-    (check-client-file-size file (client-tar-file-expected-size client-info))))
-
-(defclass client-file-info ()
-  ((plist-key
-    :initarg :plist-key
-    :reader plist-key)
-   (file-url
-    :initarg :url
-    :reader file-url)
-   (name
-    :reader name
-    :initarg :name)
-   (size
-    :initarg :size
-    :reader size)
-   (md5
-    :reader md5
-    :initarg :md5)
-   (sha256
-    :reader sha256
-    :initarg :sha256)
-   (plist
-    :reader plist
-    :initarg :plist)))
-
-(defclass asdf-file-info (client-file-info)
-  ()
-  (:default-initargs
-   :plist-key :asdf
-   :name "asdf.lisp"))
-
-(defclass setup-file-info (client-file-info)
-  ()
-  (:default-initargs
-   :plist-key :setup
-   :name "setup.lisp"))
-
-(defclass client-tar-file-info (client-file-info)
-  ()
-  (:default-initargs
-   :plist-key :client-tar
-   :name "quicklisp.tar"))
+;;; Structuring and loading information about the Quicklisp client
+;;; code
 
 (defclass client-info ()
   ((setup-info
@@ -129,8 +126,12 @@
     (let* ((instance (make-instance file-info-class))
            (key (plist-key instance))
            (file-info-plist (getf plist key)))
+      (unless file-info-plist
+        (error "Missing client-info data for ~S" key))
       (destructuring-bind (&key url size md5 sha256 &allow-other-keys)
           file-info-plist
+        (unless (and url size md5 sha256)
+          (error "Missing client-info data for ~S" key))
         (reinitialize-instance instance
                                :plist file-info-plist
                                :url url
