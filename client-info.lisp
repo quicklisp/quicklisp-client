@@ -4,19 +4,113 @@
 
 (defparameter *client-base-url* "http://zeta.quicklisp.org/")
 
+;;; Information for checking the validity of files fetched for
+;;; installing/updating the client code.
+
+(defgeneric setup-file-expected-size (client-info))
+(defgeneric setup-file-sha256 (client-info))
+
+(defgeneric asdf-file-expected-size (client-info))
+(defgeneric asdf-file-sha256 (client-info))
+
+(defgeneric client-tar-file-expected-size (client-info))
+(defgeneric client-tar-file-sha256 (client-info))
+
+;;; TODO: check cryptographic digests too.
+
+(define-condition invalid-client-file (error)
+  ((file
+    :initarg :file
+    :reader invalid-client-file-file)))
+
+(define-condition badly-sized-client-file (invalid-client-file)
+  ((expected-size
+    :initarg :expected-size
+    :reader badly-sized-client-file-expected-size)
+   (actual-size
+    :initarg :actual-size
+    :reader badly-sized-client-file-actual-size))
+  (:report (lambda (condition stream)
+             (format stream "Unexpected file size for ~A ~
+                             - expected ~A but got ~A"
+                     (invalid-client-file-file condition)
+                     (badly-sized-client-file-expected-size condition)
+                     (badly-sized-client-file-actual-size condition)))))
+
+(defun check-client-file-size (file expected-size)
+  (let ((actual-size (file-size file)))
+    (unless (eql expected-size actual-size)
+      (error 'badly-sized-client-file
+             :file file
+             :expected-size expected-size
+             :actual-size actual-size))))
+
+(defgeneric check-setup-file (file client-info)
+  (:method (file client-info)
+    (check-client-file-size file (setup-file-expected-size client-info))))
+
+(defgeneric check-asdf-file (file client-info)
+  (:method (file client-info)
+    (check-client-file-size file (asdf-file-expected-size client-info))))
+
+(defgeneric check-client-tar-file (file client-info)
+  (:method (file client-info)
+    (check-client-file-size file (client-tar-file-expected-size client-info))))
+
+(defclass client-file-info ()
+  ((plist-key
+    :initarg :plist-key
+    :reader plist-key)
+   (file-url
+    :initarg :url
+    :reader file-url)
+   (name
+    :reader name
+    :initarg :name)
+   (size
+    :initarg :size
+    :reader size)
+   (md5
+    :reader md5
+    :initarg :md5)
+   (sha256
+    :reader sha256
+    :initarg :sha256)
+   (plist
+    :reader plist
+    :initarg :plist)))
+
+(defclass asdf-file-info (client-file-info)
+  ()
+  (:default-initargs
+   :plist-key :asdf
+   :name "asdf.lisp"))
+
+(defclass setup-file-info (client-file-info)
+  ()
+  (:default-initargs
+   :plist-key :setup
+   :name "setup.lisp"))
+
+(defclass client-tar-file-info (client-file-info)
+  ()
+  (:default-initargs
+   :plist-key :client-tar
+   :name "quicklisp.tar"))
+
 (defclass client-info ()
-  ((setup-url
-    :reader setup-url
-    :initarg :setup-url)
-   (asdf-url
-    :reader asdf-url
-    :initarg :asdf-url)
+  ((setup-info
+    :reader setup-info
+    :initarg :setup-info)
+   (asdf-info
+    :reader asdf-info
+    :initarg :asdf-info)
+   (client-tar-info
+    :reader client-tar-info
+    :initarg :client-tar-info)
    (canonical-client-info-url
     :reader canonical-client-info-url
     :initarg :canonical-client-info-url)
-   (client-tar-url
-    :reader client-tar-url
-    :initarg :client-tar-url)
    (version
     :reader version
     :initarg :version)
@@ -29,6 +123,20 @@
    (source-file
     :reader source-file
     :initarg :source-file)))
+
+(defgeneric extract-client-file-info (file-info-class plist)
+  (:method (file-info-class plist)
+    (let* ((instance (make-instance file-info-class))
+           (key (plist-key instance))
+           (file-info-plist (getf plist key)))
+      (destructuring-bind (&key url size md5 sha256 &allow-other-keys)
+          file-info-plist
+        (reinitialize-instance instance
+                               :plist file-info-plist
+                               :url url
+                               :size size
+                               :md5 md5
+                               :sha256 sha256)))))
 
 (defmethod print-object ((client-info client-info) stream)
   (print-unreadable-object (client-info stream :type t)
@@ -49,22 +157,20 @@
 
 (defun load-client-info (file)
   (let ((plist (safely-read-file file)))
-    ;; FIXME: Should institute some kind of client-info plist format
-    ;; versioning & checking
-    (destructuring-bind (&key setup-url asdf-url
-                              canonical-client-info-url
-                              client-tar-url subscription-url
+    (destructuring-bind (&key subscription-url
                               version
+                              canonical-client-info-url
                               &allow-other-keys)
         plist
-      (unless (and setup-url asdf-url client-tar-url version)
-        (error 'invalid-client-info
-               :plist plist))
       (make-instance 'client-info
-                     :setup-url setup-url
-                     :asdf-url asdf-url
+                     :setup-info (extract-client-file-info 'setup-file-info
+                                                           plist)
+                     :asdf-info (extract-client-file-info 'asdf-file-info
+                                                          plist)
+                     :client-tar-info
+                     (extract-client-file-info 'client-tar-file-info
+                                               plist)
                      :canonical-client-info-url canonical-client-info-url
-                     :client-tar-url client-tar-url
                      :version version
                      :subscription-url subscription-url
                      :plist plist
@@ -104,3 +210,5 @@ client."
   "Return an URL suitable for passing as the :URL argument to
 INSTALL-CLIENT for the current local client installation."
   (canonical-client-info-url (local-client-info)))
+
+
