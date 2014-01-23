@@ -15,7 +15,8 @@
            #:first-line
            #:file-size
            #:safely-read
-           #:safely-read-file))
+           #:safely-read-file
+           #:make-versions-url))
 
 (defpackage #:ql-setup
   (:documentation
@@ -67,8 +68,7 @@
            #:directory-entries
            #:delete-directory-tree
            #:native-namestring
-           #:directory-write-date
-           #:make-versions-url))
+           #:directory-write-date))
 
 (defpackage #:ql-network
   (:documentation
