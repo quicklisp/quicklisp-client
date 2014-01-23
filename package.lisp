@@ -280,6 +280,8 @@
            #:system-list
            #:client-version
            #:client-url
+           #:available-client-versions
+           #:install-client
            #:update-client
            #:update-dist
            #:update-all-dists
