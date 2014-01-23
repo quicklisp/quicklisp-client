@@ -67,7 +67,8 @@
            #:directory-entries
            #:delete-directory-tree
            #:native-namestring
-           #:directory-write-date))
+           #:directory-write-date
+           #:make-versions-url))
 
 (defpackage #:ql-network
   (:documentation
