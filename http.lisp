@@ -350,7 +350,7 @@ information."
                    (encode (subseq string start limit))))))
     ;; FIXME: Be more configurable, and take/set the version from
     ;; somewhere else.
-    (format nil "quicklisp-client/2013121200 ~A/~A"
+    (format nil "quicklisp-client/2014-01-22-zeta ~A/~A"
             (encode (lisp-implementation-type))
             (version-string (lisp-implementation-version)))))
 
