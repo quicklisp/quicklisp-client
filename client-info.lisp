@@ -121,6 +121,13 @@
     :reader source-file
     :initarg :source-file)))
 
+(defmethod print-object ((client-info client-info) stream)
+  (print-unreadable-object (client-info stream :type t)
+    (prin1 (version client-info) stream)))
+
+(defmethod available-versions-url ((info client-info))
+  (make-versions-url (subscription-url info)))
+
 (defgeneric extract-client-file-info (file-info-class plist)
   (:method (file-info-class plist)
     (let* ((instance (make-instance file-info-class))
@@ -138,10 +145,6 @@
                                :size size
                                :md5 md5
                                :sha256 sha256)))))
-
-(defmethod print-object ((client-info client-info) stream)
-  (print-unreadable-object (client-info stream :type t)
-    (prin1 (version client-info) stream)))
 
 (defun format-client-url (path &rest format-arguments)
   (if format-arguments
@@ -212,4 +215,17 @@ client."
 INSTALL-CLIENT for the current local client installation."
   (canonical-client-info-url (local-client-info)))
 
-
+(defun available-client-versions ()
+  (let ((url (available-versions-url (local-client-info)))
+        (temp-file (qmerge "tmp/client-versions.sexp")))
+    (when url
+      (handler-case
+          (progn
+            (maybe-fetch-gzipped url temp-file)
+            (prog1
+                (with-open-file (stream temp-file)
+                  (safely-read stream))
+              (delete-file-if-exists temp-file)))
+        (unexpected-http-status (condition)
+          (unless (url-not-suitable-error-p condition)
+            (error condition)))))))
