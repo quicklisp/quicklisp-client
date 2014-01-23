@@ -449,12 +449,8 @@
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'available-versions-url)))
   (declare (ignore class))
-  (let* ((subscription-url (distinfo-subscription-url dist))
-         (suffix-pos (position #\. subscription-url :from-end t))
-         (new-url (concatenate 'string
-                               (subseq subscription-url 0 suffix-pos)
-                               "-versions.txt")))
-    (setf (available-versions-url dist) new-url)))
+  (setf (available-versions-url dist)
+        (make-versions-url (distinfo-subscription-url dist))))
 
 
 (defmethod ensure-system-index-file ((dist dist))
