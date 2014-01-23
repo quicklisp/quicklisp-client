@@ -84,7 +84,9 @@
                    (version newest-info))
            (when (or (not prompt)
                      (press-enter-to-continue))
-             (%install-client newest-info local-info)))
+             (%install-client newest-info local-info)
+             (format t "~&New Quicklisp client installed. ~
+                          It will take effect on restart.~%")))
           (t
            (format t "The most up-to-date client, version ~A, ~
                       is already installed.~%"
