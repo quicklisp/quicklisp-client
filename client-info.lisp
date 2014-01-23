@@ -5,7 +5,7 @@
 (defparameter *client-base-url* "http://zeta.quicklisp.org/")
 
 (defgeneric info-equal (info1 info2)
-  (:documentaton "Return TRUE if INFO1 and INFO2 are 'equal' in some
+  (:documentation "Return TRUE if INFO1 and INFO2 are 'equal' in some
   important sense."))
 
 ;;; Information for checking the validity of files fetched for
