@@ -4,6 +4,10 @@
 
 (defparameter *client-base-url* "http://zeta.quicklisp.org/")
 
+(defgeneric info-equal (info1 info2)
+  (:documentaton "Return TRUE if INFO1 and INFO2 are 'equal' in some
+  important sense."))
+
 ;;; Information for checking the validity of files fetched for
 ;;; installing/updating the client code.
 
@@ -36,6 +40,11 @@
             (name info)
             (size info)
             (md5 info))))
+
+(defmethod info-equal ((info1 client-file-info) (info2 client-file-info))
+  (and (eql (size info1) (size info2))
+       (equal (name info1) (name info2))
+       (equal (md5 info1) (md5 info2))))
 
 (defclass asdf-file-info (client-file-info)
   ()
