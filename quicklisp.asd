@@ -1,11 +1,18 @@
 ;;;; quicklisp.asd
 
+(defpackage #:ql-info
+  (:export #:*version*))
+
+(defvar ql-info:*version*
+  (with-open-file (stream (merge-pathnames "version.txt" *load-truename*))
+    (read-line stream)))
+
 (asdf:defsystem #:quicklisp
   :description "The Quicklisp client application."
   :author "Zach Beane <zach@quicklisp.org>"
   :license "BSD-style"
   :serial t
-  :version "2013121200"
+  :version #.(remove-if-not #'digit-char-p ql-info:*version*)
   :components ((:file "package")
                (:file "utils")
                (:file "config")
