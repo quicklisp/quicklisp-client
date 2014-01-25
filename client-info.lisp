@@ -2,7 +2,7 @@
 
 (in-package #:quicklisp-client)
 
-(defparameter *client-base-url* "http://zeta.quicklisp.org/")
+(defparameter *client-base-url* "http://alpha.quicklisp.org/")
 
 (defgeneric info-equal (info1 info2)
   (:documentation "Return TRUE if INFO1 and INFO2 are 'equal' in some
