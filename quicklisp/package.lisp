@@ -237,7 +237,8 @@
            #:system-definition-searcher
            #:system-apropos
            #:dependency-tree
-           #:clean))
+           #:clean
+           #:unknown-dist))
 
 (defpackage #:ql-dist-user
   (:documentation
@@ -261,6 +262,11 @@
         #:ql-minitar
         #:ql-gunzipper)
   (:shadow #:uninstall)
+  (:shadowing-import-from #:ql-dist
+                          #:dist-version
+                          #:dist-url)
+  (:export #:dist-version
+           #:dist-url)
   (:export #:quickload
            #:*quickload-prompt*
            #:*quickload-verbose*
