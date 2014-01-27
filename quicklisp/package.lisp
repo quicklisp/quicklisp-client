@@ -140,6 +140,8 @@
         #:ql-setup
         #:ql-gunzipper
         #:ql-minitar)
+  (:intern #:dist-version
+           #:dist-url)
   (:import-from #:ql-impl-util
                 #:delete-directory-tree
                 #:directory-entries
