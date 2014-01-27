@@ -5,4 +5,7 @@ all:
 clean:
 	rm -f quicklisp.tar quicklisp.tar.gz
 
+tag:
+	git tag version-`cat quicklisp/version.txt`
+
 
