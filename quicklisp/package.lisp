@@ -163,6 +163,7 @@
   (:export #:all-dists
            #:enabled-dists
            #:find-dist
+           #:find-dist-or-lose
            #:find-system
            #:find-release
            #:dist
@@ -293,6 +294,7 @@
            #:update-client
            #:update-dist
            #:update-all-dists
+           #:available-dist-versions
            #:add-to-init-file
            #:use-only-quicklisp-systems
            #:write-asdf-manifest-file

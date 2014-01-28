@@ -65,6 +65,9 @@
       (with-simple-restart (skip "Skip update of dist ~S" (name old))
         (update-dist old :prompt prompt)))))
 
+(defun available-dist-versions (name)
+  (available-versions (find-dist-or-lose name)))
+
 (defun help ()
   "For help with Quicklisp, see http://www.quicklisp.org/beta/")
 
