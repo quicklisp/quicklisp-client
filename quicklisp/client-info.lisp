@@ -189,6 +189,11 @@
                      :plist plist
                      :source-file (probe-file file)))))
 
+(defun mock-client-info ()
+  (make-instance 'client-info
+                 :version ql-info:*version*
+                 :subscription-url (format-client-url "client/quicklisp.sexp")))
+
 (defun fetch-client-info (url)
   (let ((info-file (qmerge "tmp/client-info.sexp")))
     (delete-file-if-exists info-file)
@@ -201,7 +206,12 @@
         (error "Invalid client info URL -- ~A" url)))))
 
 (defun local-client-info ()
-  (load-client-info (qmerge "client-info.sexp")))
+  (let ((info-file (qmerge "client-info.sexp")))
+    (if (probe-file info-file)
+        (load-client-info info-file)
+        (progn
+          (warn "Missing client-info.sexp, using mock info")
+          (mock-client-info)))))
 
 (defun newest-client-info (&optional (info (local-client-info)))
   (let ((latest (subscription-url info)))
