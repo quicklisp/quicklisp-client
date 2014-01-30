@@ -190,9 +190,21 @@
                      :source-file (probe-file file)))))
 
 (defun mock-client-info ()
-  (make-instance 'client-info
-                 :version ql-info:*version*
-                 :subscription-url (format-client-url "client/quicklisp.sexp")))
+  (flet ((mock-client-file-info (class)
+           (make-instance class
+                          :size 0
+                          :url ""
+                          :md5 ""
+                          :sha256 ""
+                          :plist nil)))
+    (make-instance 'client-info
+                   :version ql-info:*version*
+                   :subscription-url
+                   (format-client-url "client/quicklisp.sexp")
+                   :setup-info (mock-client-file-info 'setup-file-info)
+                   :asdf-info (mock-client-file-info 'asdf-file-info)
+                   :client-tar-info (mock-client-file-info
+                                     'client-tar-file-info))))
 
 (defun fetch-client-info (url)
   (let ((info-file (qmerge "tmp/client-info.sexp")))
