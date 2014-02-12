@@ -151,14 +151,15 @@
     (funcall fun)
     (terpri)))
 
-(defun apply-load-strategy (strategy)
+(defun apply-load-strategy (strategy &key verbose)
   (map nil 'ensure-installed (quicklisp-releases strategy))
   (call-with-macroexpand-progress
    (lambda ()
-     (format t "~&; Loading ~S~%" (name strategy))
-     (asdf:oos 'asdf:load-op (name strategy) :verbose nil))))
+     (when verbose
+       (format t "~&; Loading ~S~%" (name strategy)))
+     (asdf:oos 'asdf:load-op (name strategy) :verbose verbose))))
 
-(defun autoload-system-and-dependencies (name &key prompt)
+(defun autoload-system-and-dependencies (name &key verbose prompt)
   "Try to load the system named by NAME, automatically loading any
 Quicklisp-provided systems first, and catching ASDF missing
 dependencies too if possible."
@@ -166,7 +167,8 @@ dependencies too if possible."
   (with-simple-restart (abort "Give up on ~S" name)
     (let ((strategy (compute-load-strategy name))
           (tried-so-far (make-hash-table :test 'equalp)))
-      (show-load-strategy strategy)
+      (when verbose
+        (show-load-strategy strategy))
       (when (or (not prompt)
                 (press-enter-to-continue))
         (tagbody
@@ -187,9 +189,10 @@ dependencies too if possible."
                                  ~A" missing)
                          (setf (gethash missing tried-so-far) missing))
                      (autoload-system-and-dependencies missing
+                                                       :verbose verbose
                                                        :prompt prompt)
                      (go retry))))))
-           (apply-load-strategy strategy)))))
+           (apply-load-strategy strategy :verbose verbose)))))
     name))
 
 (defvar *initial-dist-url*
