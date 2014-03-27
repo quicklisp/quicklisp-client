@@ -214,7 +214,7 @@
   (:export #:release
            #:project-name
            #:system-files
-           #:archive-url-suffix
+           #:archive-url
            #:archive-size
            #:ensure-archive-file
            #:archive-content-sha1
