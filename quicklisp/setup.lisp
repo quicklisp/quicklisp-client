@@ -75,8 +75,10 @@
                         (dolist (subname (required-systems quicklisp-system))
                           (recurse subname)))
                        (t
-                        (error 'system-not-found
-                               :name name))))))
+                        (cerror "Try again"
+                                'system-not-found
+                                :name name)
+                        (recurse name))))))
       (with-consistent-dists
         (recurse name)))
     (make-instance 'load-strategy
