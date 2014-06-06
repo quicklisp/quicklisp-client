@@ -224,6 +224,8 @@
            #:ensure-local-archive-file
            #:check-local-archive-file
            #:invalid-local-archive
+           #:invalid-local-archive-file
+           #:invalid-local-archive-release
            #:missing-local-archive
            #:badly-sized-local-archive
            #:delete-and-retry)
