@@ -678,10 +678,20 @@ the given NAME."
     :reader invalid-local-archive-release)
    (file
     :initarg :file
-    :reader invalid-local-archive-file)))
+    :reader invalid-local-archive-file))
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for release ~S is invalid"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))))))
 
 (define-condition missing-local-archive (invalid-local-archive)
-  ())
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for release ~S is missing"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))))))
 
 (define-condition badly-sized-local-archive (invalid-local-archive)
   ((expected-size
@@ -689,7 +699,15 @@ the given NAME."
     :reader badly-sized-local-archive-expected-size)
    (actual-size
     :initarg :actual-size
-    :reader badly-sized-local-archive-actual-size)))
+    :reader badly-sized-local-archive-actual-size))
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for ~S is the wrong size: ~
+                     expected ~:D, got ~:D"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))
+             (badly-sized-local-archive-expected-size condition)
+             (badly-sized-local-archive-actual-size condition)))))
 
 (defmethod check-local-archive-file ((release release))
   (let ((file (local-archive-file release)))
