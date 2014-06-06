@@ -1027,11 +1027,14 @@ FUN."
 
 (defgeneric dependency-tree (system)
   (:method ((string string))
-    (dependency-tree (find-system string)))
+    (let ((system (find-system string)))
+      (when system
+        (dependency-tree system))))
   (:method ((system system))
     (with-consistent-dists
-      (list* system (mapcar 'dependency-tree (required-systems system))))))
-
+      (list* system
+             (remove nil
+                     (mapcar 'dependency-tree (required-systems system)))))))
 
 (defmethod provided-systems ((object (eql t)))
   (let ((systems (loop for dist in (enabled-dists)
