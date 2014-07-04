@@ -173,25 +173,22 @@ dependencies too if possible."
                 (press-enter-to-continue))
         (tagbody
          retry
-         (handler-bind
-             ((asdf:missing-dependency-of-version
-               (lambda (c)
-                 ;; Nothing Quicklisp can do to recover from this, so
-                 ;; just resignal
-                 (error c)))
-              (asdf:missing-dependency
-               (lambda (c)
-                 (let ((parent (asdf::missing-required-by c))
-                       (missing (asdf::missing-requires c)))
-                   (when (typep parent 'asdf:system)
-                     (if (gethash missing tried-so-far)
-                         (error "Dependency looping -- already tried to load ~
+         (handler-case (apply-load-strategy strategy)
+           (asdf:missing-dependency-of-version (c)
+             ;; Nothing Quicklisp can do to recover from this, so just
+             ;; resignal
+             (error c))
+           (asdf:missing-dependency (c)
+             (let ((parent (asdf::missing-required-by c))
+                   (missing (asdf::missing-requires c)))
+               (when (typep parent 'asdf:system)
+                 (if (gethash missing tried-so-far)
+                     (error "Dependency looping -- already tried to load ~
                                  ~A" missing)
-                         (setf (gethash missing tried-so-far) missing))
-                     (autoload-system-and-dependencies missing
-                                                       :prompt prompt)
-                     (go retry))))))
-           (apply-load-strategy strategy)))))
+                     (setf (gethash missing tried-so-far) missing))
+                 (autoload-system-and-dependencies missing
+                                                   :prompt prompt)
+                 (go retry))))))))
     name))
 
 (defvar *initial-dist-url*
