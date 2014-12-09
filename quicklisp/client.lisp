@@ -95,10 +95,8 @@ in order of descending QL-DIST:PREFERENCE."
                           :direction :output
                           :if-exists if-exists)
     (with-consistent-dists
-      ;; FIXME: Should avoid emitting lines for systems with system
-      ;; files with a pathname-name that does not match the system
-      ;; name. They're not normally loadable anyway.
-      (let ((systems (provided-systems t)))
+      (let ((systems (provided-systems t))
+            (already-seen (make-hash-table :test 'equal)))
         (dolist (system (sort systems #'>
                               :key #'preference))
           ;; FIXME: find-asdf-system-file does another find-system
@@ -108,7 +106,8 @@ in order of descending QL-DIST:PREFERENCE."
                  (enough (and system-file (enough-namestring system-file
                                                              output-file)))
                  (native (and enough (native-namestring enough))))
-            (when native
+            (when (and native (not (gethash native already-seen)))
+              (setf (gethash native already-seen) native)
               (format stream "~A~%" native)))))))
   (probe-file output-file))
 
