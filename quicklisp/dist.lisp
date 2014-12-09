@@ -605,13 +605,22 @@ the given NAME."
    "Instances of this class have a special location for their
    preference files."))
 
+(defgeneric filesystem-name (object)
+  (:method (object)
+    ;; This is to work around system names like "foo/bar".
+    (let* ((name (name object))
+           (slash (position #\/ name)))
+      (if slash
+          (subseq name 0 slash)
+          name))))
+
 (defmethod preference-file ((object preference-mixin))
   (relative-to
    (dist object)
    (make-pathname :directory (list :relative
                                    "preferences"
                                    (metadata-name object))
-                              :name (name object)
+                              :name (filesystem-name object)
                               :type "txt")))
 
 (defmethod distinfo-subscription-url :around ((dist dist))
