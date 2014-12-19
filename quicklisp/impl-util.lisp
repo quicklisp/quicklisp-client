@@ -183,6 +183,16 @@ quicklisp at CL startup."
 (defvar *wild-relative*
   (make-pathname :directory '(:relative :wild)))
 
+(definterface directoryp (entry)
+  (:documentation "Return true if ENTRY refers to a directory.")
+  (:implementation t
+    (not (or (pathname-name entry)
+             (pathname-type entry))))
+  (:implementation allegro
+    (ql-allegro:file-directory-p entry))
+  (:implementation lispworks
+    (ql-lispworks:file-directory-p entry)))
+
 (definterface directory-entries (directory)
   (:documentation "Return all directory entries of DIRECTORY as a
   list, or NIL if there are no directory entries. Excludes the \".\"
@@ -227,16 +237,12 @@ quicklisp at CL startup."
     (directory (merge-pathnames *wild-entry* directory)
                #+sbcl :resolve-symlinks #+sbcl nil)))
 
-(definterface directoryp (entry)
-  (:documentation "Return true if ENTRY refers to a directory.")
-  (:implementation t
-    (not (or (pathname-name entry)
-             (pathname-type entry)
-             (pathname-version entry))))
-  (:implementation allegro
-    (ql-allegro:file-directory-p entry))
-  (:implementation lispworks
-    (ql-lispworks:file-directory-p entry)))
+(defimplementation (directory-entries :qualifier :around) (directory)
+  ;; Don't return any entries when called with a non-directory
+  ;; argument
+  (if (directoryp directory)
+      (call-next-method)
+      (warn "directory-entries - not a directory -- ~S" directory)))
 
 (definterface delete-directory (entry)
   (:documentation "Delete the directory ENTRY. Might signal an error
@@ -262,6 +268,12 @@ quicklisp at CL startup."
   (:implementation sbcl
     (ql-sbcl:rmdir entry)))
 
+(defimplementation (delete-directory :qualifier :around) (directory)
+  ;; Don't delete non-directories with delete-directory
+  (if (directoryp directory)
+      (call-next-method)
+      (error "delete-directory - not a directory -- ~A" directory)))
+
 (definterface delete-directory-tree (pathname)
   (:documentation "Delete the directory tree rooted at PATHNAME.")
   (:implementation t
@@ -282,4 +294,12 @@ quicklisp at CL startup."
     (ql-allegro:delete-directory-and-files pathname))
   (:implementation ccl
     (ql-ccl:delete-directory pathname)))
+
+(defimplementation (delete-directory-tree :qualifier :around) (pathname)
+  (if (directoryp pathname)
+      (call-next-method)
+      (progn
+        (warn "delete-directory-tree - not a directory, ~
+               deleting anyway -- ~s" pathname)
+        (delete-file pathname))))
 
