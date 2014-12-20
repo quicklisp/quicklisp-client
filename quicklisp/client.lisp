@@ -96,6 +96,7 @@ in order of descending QL-DIST:PREFERENCE."
                           :direction :output
                           :if-exists if-exists)
     (unless exclude-local-projects
+      (register-local-projects)
       (dolist (system-file (list-local-projects))
         (let ((system-path (native-namestring system-file)))
           (write-line system-path stream))))
