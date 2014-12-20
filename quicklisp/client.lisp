@@ -84,9 +84,8 @@
     (when dist
       (ql-dist:uninstall dist))))
 
-(defun write-asdf-manifest-file (output-file
-                                 &key (if-exists :rename-and-delete)
-                                   exclude-local-projects)
+(defun write-asdf-manifest-file (output-file &key (if-exists :rename-and-delete)
+                                               exclude-local-projects)
   "Write a list of system file pathnames to OUTPUT-FILE, one per line,
 in order of descending QL-DIST:PREFERENCE."
   (when (or (eql output-file nil)
