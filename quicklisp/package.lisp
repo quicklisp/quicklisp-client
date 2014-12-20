@@ -300,6 +300,7 @@
            #:add-to-init-file
            #:use-only-quicklisp-systems
            #:write-asdf-manifest-file
+           #:add-local-projects-to-manifest
            #:where-is-system
            #:help
            #:register-local-projects
@@ -310,4 +311,3 @@
            #:who-depends-on))
 
 (in-package #:quicklisp-client)
-

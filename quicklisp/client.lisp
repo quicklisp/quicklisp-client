@@ -111,6 +111,19 @@ in order of descending QL-DIST:PREFERENCE."
               (format stream "~A~%" native)))))))
   (probe-file output-file))
 
+(defun add-local-projects-to-manifest (output-file)
+  "Adds the local-projects system-index.txt file to the manifest file."
+  (when (or (eql output-file nil) ;; copied from #'WRITE-ASDF-MANIFEST-FILE
+            (eql output-file t))
+    (setf output-file (qmerge "manifest.txt")))
+  (with-open-file (stream output-file
+                          :direction :output
+                          :if-exists :append)
+    (dolist (system-file (list-local-projects))
+      (let ((system-path (native-namestring system-file)));; copied from
+        (write-line system-path stream)))                 ;; #'MAKE-SYSTEM-INDEX
+    (probe-file output-file)))
+
 (defun where-is-system (name)
   "Return the pathname to the source directory of ASDF system with the
 given NAME, or NIL if no system by that name can be found known."
