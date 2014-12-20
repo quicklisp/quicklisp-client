@@ -85,7 +85,8 @@
       (ql-dist:uninstall dist))))
 
 (defun write-asdf-manifest-file (output-file
-                                 &key (if-exists :rename-and-delete))
+                                 &key (if-exists :rename-and-delete)
+                                   exclude-local-projects)
   "Write a list of system file pathnames to OUTPUT-FILE, one per line,
 in order of descending QL-DIST:PREFERENCE."
   (when (or (eql output-file nil)
@@ -94,6 +95,10 @@ in order of descending QL-DIST:PREFERENCE."
   (with-open-file (stream output-file
                           :direction :output
                           :if-exists if-exists)
+    (unless exclude-local-projects
+      (dolist (system-file (list-local-projects))
+        (let ((system-path (native-namestring system-file)))
+          (write-line system-path stream))))
     (with-consistent-dists
       (let ((systems (provided-systems t))
             (already-seen (make-hash-table :test 'equal)))
@@ -110,19 +115,6 @@ in order of descending QL-DIST:PREFERENCE."
               (setf (gethash native already-seen) native)
               (format stream "~A~%" native)))))))
   (probe-file output-file))
-
-(defun add-local-projects-to-manifest (output-file)
-  "Adds the local-projects system-index.txt file to the manifest file."
-  (when (or (eql output-file nil) ;; copied from #'WRITE-ASDF-MANIFEST-FILE
-            (eql output-file t))
-    (setf output-file (qmerge "manifest.txt")))
-  (with-open-file (stream output-file
-                          :direction :output
-                          :if-exists :append)
-    (dolist (system-file (list-local-projects))
-      (let ((system-path (native-namestring system-file)));; copied from
-        (write-line system-path stream)))                 ;; #'MAKE-SYSTEM-INDEX
-    (probe-file output-file)))
 
 (defun where-is-system (name)
   "Return the pathname to the source directory of ASDF system with the
