@@ -99,7 +99,7 @@ in order of descending QL-DIST:PREFERENCE."
       (register-local-projects)
       (dolist (system-file (list-local-projects))
         (let* ((enough (enough-namestring system-file output-file))
-               (native (and enough (native-namestring enough))))
+               (native (native-namestring enough)))
           (write-line native stream))))
     (with-consistent-dists
       (let ((systems (provided-systems t))
