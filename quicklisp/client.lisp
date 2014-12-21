@@ -84,8 +84,8 @@
     (when dist
       (ql-dist:uninstall dist))))
 
-(defun write-asdf-manifest-file (output-file
-                                 &key (if-exists :rename-and-delete))
+(defun write-asdf-manifest-file (output-file &key (if-exists :rename-and-delete)
+                                               exclude-local-projects)
   "Write a list of system file pathnames to OUTPUT-FILE, one per line,
 in order of descending QL-DIST:PREFERENCE."
   (when (or (eql output-file nil)
@@ -94,6 +94,12 @@ in order of descending QL-DIST:PREFERENCE."
   (with-open-file (stream output-file
                           :direction :output
                           :if-exists if-exists)
+    (unless exclude-local-projects
+      (register-local-projects)
+      (dolist (system-file (list-local-projects))
+        (let* ((enough (enough-namestring system-file output-file))
+               (native (native-namestring enough)))
+          (write-line native stream))))
     (with-consistent-dists
       (let ((systems (provided-systems t))
             (already-seen (make-hash-table :test 'equal)))

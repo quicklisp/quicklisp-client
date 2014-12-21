@@ -310,4 +310,3 @@
            #:who-depends-on))
 
 (in-package #:quicklisp-client)
-
