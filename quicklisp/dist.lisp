@@ -962,7 +962,18 @@ the given NAME."
       (call-next-method)
       (preference (release system))))
 
+(defun thing-name-designator (designator)
+  "Convert DESIGNATOR to a string naming a thing. Strings are used
+  as-is, symbols are converted to their downcased symbol-name."
+  (typecase designator
+    (string designator)
+    (symbol (string-downcase designator))
+    (t
+     (error "~S is not a valid designator for a system or release"
+            designator))))
+
 (defun find-thing-named (find-fun name)
+  (setf name (thing-name-designator name))
   (let ((result '()))
     (dolist (dist (enabled-dists) (sort result #'> :key #'preference))
       (let ((thing (funcall find-fun name dist)))
@@ -1035,6 +1046,8 @@ FUN."
 
 
 (defgeneric dependency-tree (system)
+  (:method ((symbol symbol))
+    (dependency-tree (string-downcase symbol)))
   (:method ((string string))
     (let ((system (find-system string)))
       (when system
@@ -1057,6 +1070,8 @@ FUN."
 
 
 (defgeneric system-apropos (term)
+  (:method ((term symbol))
+    (system-apropos (string-downcase term)))
   (:method ((term string))
     (dolist (system (provided-systems t))
       (when (or (search term (name system))
