@@ -26,6 +26,18 @@
   (:implementation ccl
     (ql-ccl:make-socket :remote-host host
                         :remote-port port))
+  (:implementation clasp
+    (let* ((endpoint (ql-clasp:host-ent-address
+                      (ql-clasp:get-host-by-name host)))
+           (socket (make-instance 'ql-clasp:inet-socket
+                                  :protocol :tcp
+                                  :type :stream)))
+      (ql-clasp:socket-connect socket endpoint port)
+      (ql-clasp:socket-make-stream socket
+                                 :element-type '(unsigned-byte 8)
+                                 :input t
+                                 :output t
+                                 :buffering :full)))
   (:implementation clisp
     (ql-clisp:socket-connect port host :element-type '(unsigned-byte 8)))
   (:implementation cmucl

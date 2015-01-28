@@ -45,6 +45,7 @@
            #:abcl
            #:allegro
            #:ccl
+           #:clasp
            #:clisp
            #:cmucl
            #:cormanlisp

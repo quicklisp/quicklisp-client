@@ -62,6 +62,8 @@
     "ccl-init.lisp"
     #-windows
     ".ccl-init.lisp")
+  (:implementation clasp
+    ".clasprc")
   (:implementation clisp
     ".clisprc.lisp")
   (:implementation ecl
@@ -205,6 +207,13 @@ quicklisp at CL startup."
   (:implementation ccl
     (directory (merge-pathnames *wild-entry* directory)
                #+ccl :directories #+ccl t))
+  (:implementation clasp
+    (setf directory (truename directory))
+    (nconc
+     (directory (merge-pathnames *wild-entry* directory)
+                #+clasp :resolve-symlinks #+clasp nil)
+     (directory (merge-pathnames *wild-relative* directory)
+                #+clasp :resolve-symlinks #+clasp nil)))
   (:implementation clisp
     (mapcar 'first
             (nconc (directory (merge-pathnames *wild-entry* directory)
@@ -253,6 +262,8 @@ quicklisp at CL startup."
     (ql-allegro:delete-directory entry))
   (:implementation ccl
     (ql-ccl:delete-directory entry))
+  (:implementation clasp
+    (ql-clasp:rmdir entry))
   (:implementation clisp
     (ql-clisp:delete-dir entry))
   (:implementation cmucl
