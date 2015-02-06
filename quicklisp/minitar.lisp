@@ -125,9 +125,15 @@ value it specifies as multiple values."
           (read-sequence block stream)
           (write-sequence block outstream :end partial))))))
 
+(defun gnu-long-name (size stream)
+  ;; GNU long names are simply the filename (null terminated) packed into the
+  ;; payload.
+  (let ((payload (read-octet-vector size stream)))
+    (ascii-subseq payload 0 (1- size))))
+
 (defun unpack-tarball (tarfile &key (directory *default-pathname-defaults*))
   (let ((block (make-block-buffer))
-        (pax-extended-path nil))
+        (extended-path nil))
     (with-open-file (stream tarfile :element-type '(unsigned-byte 8))
       (loop
        (let ((size (read-sequence block stream)))
@@ -139,7 +145,7 @@ value it specifies as multiple values."
            (return))
          (let* ((payload-code (aref block 156))
                 (payload-type (payload-type payload-code))
-                (tar-path (or (shiftf pax-extended-path nil)
+                (tar-path (or (shiftf extended-path nil)
                               (full-path block)))
                 (full-path (merge-pathnames tar-path directory))
                 (payload-size (payload-size block))
@@ -149,14 +155,16 @@ value it specifies as multiple values."
             (save-file full-path payload-size stream))
            (:directory
             (ensure-directories-exist full-path))
-           ((:symlink :long-name :global-header)
+           ((:symlink :global-header)
             ;; These block types aren't required for Quicklisp archives
             (skip-n-blocks block-count stream))
+           (:long-name
+            (setf extended-path (gnu-long-name payload-size stream)))
            (:pax-extended-header
             (let* ((pax-header-data (read-octet-vector payload-size stream))
                    (path (pax-header-path pax-header-data)))
               (when path
-                (setf pax-extended-path path))))
+                (setf extended-path path))))
            (t
             (warn "Unknown tar block payload code -- ~D" payload-code)
             (skip-n-blocks block-count stream)))))))))
