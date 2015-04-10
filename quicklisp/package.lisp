@@ -253,6 +253,13 @@
   (:use #:cl
         #:ql-dist))
 
+(defpackage #:ql-bundle
+  (:documentation
+   "A package for supporting the QL:BUNDLE-SYSTEMS function.")
+  (:use #:cl #:ql-dist)
+  (:shadow #:find-system
+           #:find-release))
+
 (defpackage #:quicklisp-client
   (:documentation
    "The Quicklisp client package, intended for end-user Quicklisp
