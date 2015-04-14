@@ -156,12 +156,22 @@
         (format stream "~A/~A~%" prefix system-file)))))
 
 (defmethod write-loader-script ((bundle bundle) stream)
-  (write-line ";;;; TBD" stream))
+  (let ((template-lines
+         (load-time-value
+          (with-open-file (stream #. (merge-pathnames "bundle-template"
+                                                      (or *compile-file-truename*
+                                                          *load-truename*)))
+            (loop for line = (read-line stream nil)
+                  while line collect line)))))
+    (dolist (line template-lines)
+      (write-line line stream))))
 
 (defmethod write-bundle ((bundle bundle) target)
   (unpack-releases bundle target)
   (let ((index-file (merge-pathnames "system-index.txt" target))
-        (loader-file (merge-pathnames "bundle-loader.lisp" target)))
+        (loader-file (merge-pathnames "bundle-loader.lisp" target))
+        (local-projects (merge-pathnames "local-projects/" target)))
+    (ensure-directories-exist local-projects)
     (with-open-file (stream index-file :direction :output
                             :if-exists :supersede)
       (write-system-index bundle stream))
@@ -169,3 +179,11 @@
                             :if-exists :supersede)
       (write-loader-script bundle stream)))
   bundle)
+
+
+(defun ql:bundle-systems (system-names &key to)
+  (unless to
+    (error "TO argument must be provided"))
+  (let ((bundle (make-instance 'bundle)))
+    (add-systems-recursively system-names bundle)
+    (write-bundle bundle to)))

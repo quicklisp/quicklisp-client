@@ -258,7 +258,12 @@
    "A package for supporting the QL:BUNDLE-SYSTEMS function.")
   (:use #:cl #:ql-dist)
   (:shadow #:find-system
-           #:find-release))
+           #:find-release)
+  (:export #:bundle
+           #:ensure-system
+           #:ensure-release
+           #:write-bundle
+           #:add-systems-recursively))
 
 (defpackage #:quicklisp-client
   (:documentation
@@ -315,6 +320,7 @@
            #:*local-project-directories*
            #:list-local-projects
            #:list-local-systems
-           #:who-depends-on))
+           #:who-depends-on
+           #:bundle-systems))
 
 (in-package #:quicklisp-client)
