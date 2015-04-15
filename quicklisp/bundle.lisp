@@ -177,8 +177,8 @@
       (write-system-index bundle stream))
     (with-open-file (stream loader-file :direction :output
                             :if-exists :supersede)
-      (write-loader-script bundle stream)))
-  bundle)
+      (write-loader-script bundle stream))
+    (probe-file loader-file)))
 
 
 (defun ql:bundle-systems (system-names &key to)
