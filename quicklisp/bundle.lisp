@@ -166,10 +166,22 @@
     (dolist (line template-lines)
       (write-line line stream))))
 
+(defun coerce-to-directory (pathname)
+  ;; Cribbed from quicklisp-bootstrap/quicklisp.lisp
+  (let ((name (file-namestring pathname)))
+    (if (or (null name)
+            (equal name ""))
+        pathname
+        (make-pathname :defaults pathname
+                       :name nil
+                       :type nil
+                       :directory (append (pathname-directory pathname)
+                                          (list name))))))
+
 (defmethod write-bundle ((bundle bundle) target)
   (unpack-releases bundle target)
   (let ((index-file (merge-pathnames "system-index.txt" target))
-        (loader-file (merge-pathnames "bundle-loader.lisp" target))
+        (loader-file (merge-pathnames "bundle.lisp" target))
         (local-projects (merge-pathnames "local-projects/" target)))
     (ensure-directories-exist local-projects)
     (with-open-file (stream index-file :direction :output
@@ -186,4 +198,5 @@
     (error "TO argument must be provided"))
   (let ((bundle (make-instance 'bundle)))
     (add-systems-recursively system-names bundle)
-    (write-bundle bundle to)))
+    (values (write-bundle bundle (coerce-to-directory to))
+            bundle)))
