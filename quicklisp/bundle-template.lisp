@@ -3,7 +3,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require "asdf")
   (unless (find-package '#:asdf)
-    (error "ASDF could not be loaded")))
+    (error "ASDF could not be required")))
 
 (let ((indicator '#:ql-bundle-v1)
       (searcher-name '#:ql-bundle-searcher)
@@ -124,15 +124,24 @@
                            do
                            (setf indicator key)
                            (setf searcher-name searcher)
-                           (return-from done t))))))))
+                           (return-from done t)))))))
+
+           (clear-asdf (table)
+             (maphash (lambda (system-name pathname)
+                        (declare (ignore pathname))
+                        (asdf:clear-system system-name))
+                      table)))
+
     (let ((existing (check-for-existing-searcher
                      asdf:*system-definition-search-functions*)))
       (let* ((bundled (make-bundled-systems-table))
-            (local (make-local-projects-table))
-            (existing (get searcher-name indicator))
-            (filter (=matching-data-sources bundled local)))
+             (local (make-local-projects-table))
+             (existing-tables (get searcher-name indicator))
+             (filter (=matching-data-sources bundled local)))
         (setf (get searcher-name indicator)
-              (list* local bundled (delete-if filter existing))))
+              (list* local bundled (delete-if filter existing-tables)))
+        (clear-asdf local)
+        (clear-asdf bundled))
       (unless existing
         (setf (symbol-function searcher-name) #'search-function)
         (push searcher-name asdf:*system-definition-search-functions*)))
