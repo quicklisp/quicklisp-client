@@ -263,7 +263,10 @@
            #:ensure-system
            #:ensure-release
            #:write-bundle
-           #:add-systems-recursively))
+           #:add-systems-recursively
+           #:object-not-found
+           #:system-not-found
+           #:release-not-found))
 
 (defpackage #:quicklisp-client
   (:documentation

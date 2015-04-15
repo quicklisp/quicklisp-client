@@ -107,6 +107,12 @@
               (make-table :data-source (relative "local-projects/")
                           :init-function #'initialize-local-projects-table)))
 
+           (=matching-data-sources (&rest tables)
+             (let ((data-sources (mapcar #'data-source tables)))
+               (lambda (table)
+                 (member (data-source table) data-sources
+                         :test #'equalp))))
+
            (check-for-existing-searcher (searchers)
              (block done
                (dolist (searcher searchers)
@@ -121,8 +127,12 @@
                            (return-from done t))))))))
     (let ((existing (check-for-existing-searcher
                      asdf:*system-definition-search-functions*)))
-      (push (make-bundled-systems-table) (get searcher-name indicator))
-      (push (make-local-projects-table) (get searcher-name indicator))
+      (let* ((bundled (make-bundled-systems-table))
+            (local (make-local-projects-table))
+            (existing (get searcher-name indicator))
+            (filter (=matching-data-sources bundled local)))
+        (setf (get searcher-name indicator)
+              (list* local bundled (delete-if filter existing))))
       (unless existing
         (setf (symbol-function searcher-name) #'search-function)
         (push searcher-name asdf:*system-definition-search-functions*)))
