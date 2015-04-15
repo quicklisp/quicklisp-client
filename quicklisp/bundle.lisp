@@ -194,6 +194,15 @@
 
 
 (defun ql:bundle-systems (system-names &key to)
+  "In the directory TO, construct a self-contained bundle of libraries
+based on SYSTEM-NAMES. For each system named, and its recursive
+required systems, unpack its release archive in TO/software/, and
+write a system index, compatible with the output of
+QL:WRITE-ASDF-MANIFEST-FILE, to TO/system-index.txt. Write a loader
+script to TO/bundle.lisp that, when loaded via CL:LOAD, configures
+ASDF to load systems from the bundle before any other system.
+
+SYSTEM-NAMES must name systems provided directly by Quicklisp."
   (unless to
     (error "TO argument must be provided"))
   (let ((bundle (make-instance 'bundle)))
