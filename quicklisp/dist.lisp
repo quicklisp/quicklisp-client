@@ -1069,14 +1069,21 @@ FUN."
     (sort releases #'string< :key #'name)))
 
 
-(defgeneric system-apropos (term)
+(defgeneric system-apropos-list (term)
   (:method ((term symbol))
-    (system-apropos (string-downcase term)))
+    (system-apropos-list (string-downcase term)))
   (:method ((term string))
-    (dolist (system (provided-systems t))
-      (when (or (search term (name system))
-                (search term (name (release system))))
-        (format t "~A~%" system)))
+    (let ((result '()))
+      (dolist (system (provided-systems t) (nreverse result))
+        (when (or (search term (name system))
+                  (search term (name (release system))))
+          (push system result))))))
+
+(defgeneric system-apropos (term)
+  (:method (term)
+    (map nil (lambda (system)
+               (format t "~A~%" system))
+         (system-apropos-list term))
     (values)))
 
 

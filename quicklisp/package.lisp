@@ -242,6 +242,7 @@
            #:find-asdf-system-file
            #:system-definition-searcher
            #:system-apropos
+           #:system-apropos-list
            #:dependency-tree
            #:clean
            #:unknown-dist))
@@ -307,6 +308,7 @@
            #:setup
            #:provided-systems
            #:system-apropos
+           #:system-apropos-list
            #:system-list
            #:client-version
            #:client-url
