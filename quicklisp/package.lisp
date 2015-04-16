@@ -256,7 +256,7 @@
 (defpackage #:ql-bundle
   (:documentation
    "A package for supporting the QL:BUNDLE-SYSTEMS function.")
-  (:use #:cl #:ql-dist)
+  (:use #:cl #:ql-dist #:ql-impl-util)
   (:shadow #:find-system
            #:find-release)
   (:export #:bundle
@@ -266,7 +266,8 @@
            #:add-systems-recursively
            #:object-not-found
            #:system-not-found
-           #:release-not-found))
+           #:release-not-found
+           #:bundle-directory-exists))
 
 (defpackage #:quicklisp-client
   (:documentation

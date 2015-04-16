@@ -32,7 +32,9 @@
 
 ;;; Conditions
 
-(define-condition object-not-found (error)
+(define-condition bundle-error (error) ())
+
+(define-condition object-not-found (bundle-error)
   ((name
     :initarg :name
     :reader object-not-found-name)
@@ -56,6 +58,15 @@
   ()
   (:default-initargs
    :type "Release"))
+
+(define-condition bundle-directory-exists (bundle-error)
+  ((directory
+    :initarg :directory
+    :reader bundle-directory-exists-directory))
+  (:report
+   (lambda (condition stream)
+     (format stream "Bundle directory ~A already exists"
+             (bundle-directory-exists-directory condition)))))
 
 
 (defclass bundle ()
@@ -193,7 +204,7 @@
     (probe-file loader-file)))
 
 
-(defun ql:bundle-systems (system-names &key to)
+(defun ql:bundle-systems (system-names &key to (overwrite t))
   "In the directory TO, construct a self-contained bundle of libraries
 based on SYSTEM-NAMES. For each system named, and its recursive
 required systems, unpack its release archive in TO/software/, and
@@ -205,7 +216,16 @@ ASDF to load systems from the bundle before any other system.
 SYSTEM-NAMES must name systems provided directly by Quicklisp."
   (unless to
     (error "TO argument must be provided"))
-  (let ((bundle (make-instance 'bundle)))
+  (let* ((bundle (make-instance 'bundle))
+         (to (coerce-to-directory to))
+         (software (merge-pathnames "software/" to)))
+    (when (and (probe-directory to)
+               (not overwrite))
+      (cerror "Overwrite it"
+              'bundle-directory-exists
+              :directory to))
+    (when (probe-directory software)
+      (delete-directory-tree software))
     (add-systems-recursively system-names bundle)
-    (values (write-bundle bundle (coerce-to-directory to))
+    (values (write-bundle bundle to)
             bundle)))
