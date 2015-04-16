@@ -266,8 +266,10 @@
            #:add-systems-recursively
            #:object-not-found
            #:system-not-found
+           #:system-not-found-system
            #:release-not-found
-           #:bundle-directory-exists))
+           #:bundle-directory-exists
+           #:bundle-directory-exists-directory))
 
 (defpackage #:quicklisp-client
   (:documentation

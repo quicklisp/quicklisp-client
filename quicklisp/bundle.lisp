@@ -50,7 +50,8 @@
    :type "Object"))
 
 (define-condition system-not-found (object-not-found)
-  ()
+  ((name
+    :reader system-not-found-system))
   (:default-initargs
    :type "System"))
 
@@ -144,7 +145,7 @@
 
 
 (defmethod unpack-release (release target)
-  (let ((*default-pathname-defaults* (pathname
+  (let ((*default-pathname-defaults* (truename
                                       (ensure-directories-exist target)))
         (archive (ensure-local-archive-file release))
         (temp-tar (ensure-directories-exist
