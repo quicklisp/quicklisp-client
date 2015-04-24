@@ -20,7 +20,6 @@
 
 (defgeneric write-loader-script (bundle stream))
 (defgeneric write-system-index (bundle stream))
-(defgeneric write-bundle (bundle target))
 
 (defgeneric unpack-release (release target))
 (defgeneric unpack-releases (bundle target))
