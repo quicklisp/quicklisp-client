@@ -181,14 +181,19 @@ dependencies too if possible."
            (asdf:missing-dependency (c)
              (let ((parent (asdf::missing-required-by c))
                    (missing (asdf::missing-requires c)))
-               (when (typep parent 'asdf:system)
-                 (if (gethash missing tried-so-far)
+               (typecase parent
+                 (asdf:system
+                  (if (gethash missing tried-so-far)
                      (error "Dependency looping -- already tried to load ~
                                  ~A" missing)
                      (setf (gethash missing tried-so-far) missing))
-                 (autoload-system-and-dependencies missing
+                  (autoload-system-and-dependencies missing
                                                    :prompt prompt)
-                 (go retry))))))))
+                  (go retry))
+                 (t
+                  ;; Error isn't from a system dependency, so there's
+                  ;; nothing to autoload
+                  (error c)))))))))
     name))
 
 (defvar *initial-dist-url*
