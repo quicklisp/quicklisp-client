@@ -1071,8 +1071,9 @@ FUN."
 
 (defgeneric system-apropos-list (term)
   (:method ((term symbol))
-    (system-apropos-list (string-downcase term)))
+    (system-apropos-list (symbol-name term)))
   (:method ((term string))
+    (setf term (string-downcase term))
     (let ((result '()))
       (dolist (system (provided-systems t) (nreverse result))
         (when (or (search term (name system))
