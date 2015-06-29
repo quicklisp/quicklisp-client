@@ -515,10 +515,9 @@ the given NAME."
   (relative-to dist "distinfo.txt"))
 
 (defun find-dist (name)
-  (let ((pathname (merge-pathnames "distinfo.txt"
-                                   (dist-name-pathname name))))
-    (when (probe-file pathname)
-      (make-dist-from-file pathname))))
+  (find name (all-dists)
+        :key #'name
+        :test #'string=))
 
 (defmethod enabledp ((dist dist))
   (not (not (probe-file (relative-to dist "enabled.txt")))))
