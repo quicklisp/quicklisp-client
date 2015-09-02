@@ -1069,6 +1069,7 @@ FUN."
 
 
 (defgeneric system-apropos-list (term)
+  (:documentation "Collect the systems whose name matches the TERM.")
   (:method ((term symbol))
     (system-apropos-list (symbol-name term)))
   (:method ((term string))
