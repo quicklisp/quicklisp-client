@@ -1079,12 +1079,19 @@ FUN."
                   (search term (name (release system))))
           (push system result))))))
 
-(defgeneric system-apropos (term)
-  (:method (term)
-    (map nil (lambda (system)
-               (format t "~A~%" system))
-         (system-apropos-list term))
-    (values)))
+(defgeneric %system-apropos (term stream)
+  (:documentation "Similar to system-apropos except that the STREAM argument is
+  obligatory"))
+
+(defmethod %system-apropos (term stream)
+  (map nil (lambda (system)
+             (format stream "~A~%" system))
+       (system-apropos-list term))
+  (values))
+
+(defun system-apropos (term &optional (stream t))
+  "Prints to STREAM the systems whose name matches TERM."
+  (%system-apropos term stream))
 
 
 ;;;
