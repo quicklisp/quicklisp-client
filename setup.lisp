@@ -82,9 +82,7 @@ already exist."
   "Try several methods to make sure that a sufficiently-new ASDF is
 loaded: first try (require 'asdf), then loading the ASDF FASL, then
 compiling asdf.lisp to a FASL and then loading it."
-  (let* ((source (qmerge "asdf.lisp"))
-         (fasl (asdf-fasl-pathname)))
-    (ensure-directories-exist fasl)
+  (let ((source (qmerge "asdf.lisp")))
     (labels ((asdf-symbol (name)
                (let ((asdf-package (find-package '#:asdf)))
                  (when asdf-package
@@ -106,8 +104,9 @@ compiling asdf.lisp to a FASL and then loading it."
                           (return t)))))
           (try)
           (try (require 'asdf))
-          (try (load fasl :verbose nil))
-          (try (load (compile-file source :verbose nil :output-file fasl)))
+          (let ((fasl (asdf-fasl-pathname)))
+            (try (load fasl :verbose nil))
+            (try (load (compile-file source :verbose nil :output-file fasl))))
           (error "Could not load ASDF ~S or newer" *required-asdf-version*))))))
 
 (ensure-asdf-loaded)
