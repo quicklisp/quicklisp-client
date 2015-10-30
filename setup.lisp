@@ -1,242 +1,135 @@
-(in-package #:quicklisp)
+(defpackage #:ql-setup
+  (:use #:cl)
+  (:export #:*quicklisp-home*
+           #:qmerge
+           #:qenough))
 
-(defun show-wrapped-list (words &key (indent 4) (margin 60))
- (let ((*print-right-margin* margin)
-       (*print-pretty* t)
-       (*print-escape* nil)
-       (prefix (make-string indent :initial-element #\Space)))
-   (pprint-logical-block (nil words :per-line-prefix prefix)
-     (pprint-fill *standard-output* (sort (copy-seq words) #'string<) nil))
-   (fresh-line)
-   (finish-output)))
+(in-package #:ql-setup)
 
-(defun recursively-install (name)
-  (labels ((recurse (name)
-             (let ((system (find-system name)))
-               (unless system
-                 (error "Unknown system ~S" name))
-               (ensure-installed system)
-               (mapcar #'recurse (required-systems system))
-               name)))
-    (with-consistent-dists
-      (recurse name))))
+(unless *load-truename*
+  (error "This file must be LOADed to set up quicklisp."))
 
-(defclass load-strategy ()
-  ((name
-    :initarg :name
-    :accessor name)
-   (asdf-systems
-    :initarg :asdf-systems
-    :accessor asdf-systems)
-   (quicklisp-systems
-    :initarg :quicklisp-systems
-    :accessor quicklisp-systems)))
+(defvar *quicklisp-home*
+  (make-pathname :name nil :type nil
+                 :defaults *load-truename*))
 
-(defmethod print-object ((strategy load-strategy) stream)
-  (print-unreadable-object (strategy stream :type t)
-    (format stream "~S (~D asdf, ~D quicklisp)"
-            (name strategy)
-            (length (asdf-systems strategy))
-            (length (quicklisp-systems strategy)))))
+(defun qmerge (pathname)
+  "Return PATHNAME merged with the base Quicklisp directory."
+  (merge-pathnames pathname *quicklisp-home*))
 
-(defgeneric quicklisp-releases (strategy)
-  (:method (strategy)
-    (remove-duplicates (mapcar 'release (quicklisp-systems strategy)))))
+(defun qenough (pathname)
+  (enough-namestring pathname *quicklisp-home*))
 
-(defgeneric quicklisp-release-table (strategy)
-  (:method ((strategy load-strategy))
-    (let ((table (make-hash-table)))
-      (dolist (system (quicklisp-systems strategy))
-        (push system (gethash (release system) table nil)))
-      table)))
+;;; ASDF is a hard requirement of quicklisp. Make sure it's either
+;;; already loaded or load it from quicklisp's bundled version.
 
-(define-condition system-not-found (error)
-  ((name
-    :initarg :name
-    :reader system-not-found-name))
-  (:report (lambda (condition stream)
-             (format stream "System ~S not found"
-                     (system-not-found-name condition))))
-  (:documentation "This condition is signaled by QUICKLOAD when a
-  system given to load is not available via ASDF or a Quicklisp
-  dist."))
+(defvar *required-asdf-version* "2.26")
 
-(defun compute-load-strategy (name)
-  (setf name (string-downcase name))
-  (let ((asdf-systems '())
-        (quicklisp-systems '()))
-    (labels ((recurse (name)
-               (let ((asdf-system (asdf:find-system name nil))
-                     (quicklisp-system (find-system name)))
-                 (cond (asdf-system
-                        (push asdf-system asdf-systems))
-                       (quicklisp-system
-                        (push quicklisp-system quicklisp-systems)
-                        (dolist (subname (required-systems quicklisp-system))
-                          (recurse subname)))
-                       (t
-                        (error 'system-not-found
-                               :name name))))))
-      (with-consistent-dists
-        (recurse name)))
-    (make-instance 'load-strategy
-                   :name name
-                   :asdf-systems (remove-duplicates asdf-systems)
-                   :quicklisp-systems (remove-duplicates quicklisp-systems))))
+;;; Put ASDF's fasls in a separate directory
 
-(defun show-load-strategy (strategy)
-  (format t "To load ~S:~%" (name strategy))
-  (let ((asdf-systems (asdf-systems strategy))
-        (releases (quicklisp-releases strategy)))
-    (when asdf-systems
-      (format t "  Load ~D ASDF system~:P:~%" (length asdf-systems))
-      (show-wrapped-list (mapcar 'asdf:component-name asdf-systems)))
-    (when releases
-      (format t "  Install ~D Quicklisp release~:P:~%" (length releases))
-      (show-wrapped-list (mapcar 'name releases)))))
+(defun implementation-signature ()
+  "Return a string suitable for discriminating different
+implementations, or similar implementations with possibly-incompatible
+FASLs."
+  ;; XXX Will this have problems with stuff like threads vs
+  ;; non-threads fasls?
+  (let ((*print-pretty* nil))
+    (format nil "lisp-implementation-type: ~A~%~
+                 lisp-implementation-version: ~A~%~
+                 machine-type: ~A~%~
+                 machine-version: ~A~%"
+            (lisp-implementation-type)
+            (lisp-implementation-version)
+            (machine-type)
+            (machine-version))))
 
-(defvar *macroexpand-progress-in-progress* nil)
+(defun dumb-string-hash (string)
+  "Produce a six-character hash of STRING."
+  (let ((hash #xD13CCD13))
+    (loop for char across string
+          for value = (char-code char)
+          do
+          (setf hash (logand #xFFFFFFFF
+                             (logxor (ash hash 5)
+                                     (ash hash -27)
+                                     value))))
+    (subseq (format nil "~(~36,6,'0R~)" (mod hash 88888901))
+            0 6)))
 
-(defun macroexpand-progress-fun (old-hook &key (char #\.)
-                                 (chars-per-line 50)
-                                 (forms-per-char 250))
-  (let ((output-so-far 0)
-        (seen-so-far 0))
-    (labels ((finish-line ()
-               (when (plusp output-so-far)
-                 (dotimes (i (- chars-per-line output-so-far))
-                   (write-char char))
-                 (terpri)
-                 (setf output-so-far 0)))
-             (show-string (string)
-               (let* ((length (length string))
-                      (new-output (+ length output-so-far)))
-                 (cond ((< chars-per-line new-output)
-                        (finish-line)
-                        (write-string string)
-                        (setf output-so-far length))
-                       (t
-                        (write-string string)
-                        (setf output-so-far new-output))))
-               (finish-output))
-             (show-package (name)
-               ;; Only show package markers when compiling. Showing
-               ;; them when loading shows a bunch of ASDF system
-               ;; package noise.
-               (when *compile-file-pathname*
-                 (finish-line)
-                 (show-string (format nil "[package ~(~A~)]" name)))))
-      (lambda (fun form env)
-        (when (and (consp form)
-                   (eq (first form) 'cl:defpackage)
-                   (ignore-errors (string (second form))))
-	  (show-package (second form)))
-        (incf seen-so-far)
-        (when (<= forms-per-char seen-so-far)
-          (setf seen-so-far 0)
-          (write-char char)
-          (finish-output)
-          (incf output-so-far)
-          (when (<= chars-per-line output-so-far)
-            (setf output-so-far 0)
-            (terpri)
-            (finish-output)))
-        (funcall old-hook fun form env)))))
+(defun asdf-fasl-pathname ()
+  "Return a pathname suitable for storing the ASDF FASL, separated
+from ASDF FASLs from incompatible implementations. Also, save a file
+in the directory with the implementation signature, if it doesn't
+already exist."
+  (let* ((implementation-signature (implementation-signature))
+         (original-fasl (compile-file-pathname (qmerge "asdf.lisp")))
+         (fasl
+          (qmerge (make-pathname
+                   :defaults original-fasl
+                   :directory
+                   (list :relative
+                         "cache"
+                         "asdf-fasls"
+                         (dumb-string-hash implementation-signature)))))
+         (signature-file (merge-pathnames "signature.txt" fasl)))
+    (ensure-directories-exist fasl)
+    (unless (probe-file signature-file)
+      (with-open-file (stream signature-file :direction :output)
+        (write-string implementation-signature stream)))
+    fasl))
 
-(defun call-with-macroexpand-progress (fun)
-  (let ((*macroexpand-hook* (if *macroexpand-progress-in-progress*
-                                *macroexpand-hook*
-                                (macroexpand-progress-fun *macroexpand-hook*)))
-        (*macroexpand-progress-in-progress* t))
-    (funcall fun)
-    (terpri)))
+(defun ensure-asdf-loaded ()
+  "Try several methods to make sure that a sufficiently-new ASDF is
+loaded: first try (require 'asdf), then loading the ASDF FASL, then
+compiling asdf.lisp to a FASL and then loading it."
+  (let ((source (qmerge "asdf.lisp")))
+    (labels ((asdf-symbol (name)
+               (let ((asdf-package (find-package '#:asdf)))
+                 (when asdf-package
+                   (find-symbol (string name) asdf-package))))
+             (version-satisfies (version)
+               (let ((vs-fun (asdf-symbol '#:version-satisfies))
+                     (vfun (asdf-symbol '#:asdf-version)))
+                 (when (and vs-fun vfun
+                            (fboundp vs-fun)
+                            (fboundp vfun))
+                   (funcall vs-fun (funcall vfun) version)))))
+      (block nil
+        (macrolet ((try (&body asdf-loading-forms)
+                     `(progn
+                        (handler-bind ((warning #'muffle-warning))
+                          (ignore-errors
+                            ,@asdf-loading-forms))
+                        (when (version-satisfies *required-asdf-version*)
+                          (return t)))))
+          (try)
+          (try (require 'asdf))
+          (let ((fasl (asdf-fasl-pathname)))
+            (try (load fasl :verbose nil))
+            (try (load (compile-file source :verbose nil :output-file fasl))))
+          (error "Could not load ASDF ~S or newer" *required-asdf-version*))))))
 
-(defun apply-load-strategy (strategy)
-  (map nil 'ensure-installed (quicklisp-releases strategy))
-  (call-with-macroexpand-progress
-   (lambda ()
-     (format t "~&; Loading ~S~%" (name strategy))
-     (asdf:oos 'asdf:load-op (name strategy) :verbose nil))))
+(ensure-asdf-loaded)
 
-(defun autoload-system-and-dependencies (name &key prompt)
-  "Try to load the system named by NAME, automatically loading any
-Quicklisp-provided systems first, and catching ASDF missing
-dependencies too if possible."
-  (setf name (string-downcase name))
-  (with-simple-restart (abort "Give up on ~S" name)
-    (let ((strategy (compute-load-strategy name))
-          (tried-so-far (make-hash-table :test 'equalp)))
-      (show-load-strategy strategy)
-      (when (or (not prompt)
-                (press-enter-to-continue))
-        (tagbody
-         retry
-         (handler-bind
-             ((asdf:missing-dependency-of-version
-               (lambda (c)
-                 ;; Nothing Quicklisp can do to recover from this, so
-                 ;; just resignal
-                 (error c)))
-              (asdf:missing-dependency
-               (lambda (c)
-                 (let ((parent (asdf::missing-required-by c))
-                       (missing (asdf::missing-requires c)))
-                   (when (typep parent 'asdf:system)
-                     (if (gethash missing tried-so-far)
-                         (error "Dependency looping -- already tried to load ~
-                                 ~A" missing)
-                         (setf (gethash missing tried-so-far) missing))
-                     (autoload-system-and-dependencies missing
-                                                       :prompt prompt)
-                     (go retry))))))
-           (apply-load-strategy strategy)))))
-    name))
+;;;
+;;; Quicklisp sometimes must upgrade ASDF. Ugrading ASDF will blow
+;;; away existing ASDF methods, so e.g. FASL recompilation :around
+;;; methods would be lost. This config file will make it possible to
+;;; ensure ASDF can be configured before loading Quicklisp itself via
+;;; ASDF. Thanks to Nikodemus Siivola for pointing out this issue.
+;;;
 
-(defvar *initial-dist-url*
-  "http://beta.quicklisp.org/dist/quicklisp.txt")
+(let ((asdf-init (probe-file (qmerge "asdf-config/init.lisp"))))
+  (when asdf-init
+    (with-simple-restart (skip "Skip loading ~S" asdf-init)
+      (load asdf-init :verbose nil :print nil))))
 
-(defun maybe-initial-setup ()
-  ;; Is this running under the quicklisp bootstrap?
-  (let ((bootstrap-package (find-package 'quicklisp-quickstart)))
-    (when bootstrap-package
-      (let* ((proxy (find-symbol (string '#:*proxy-url*) bootstrap-package))
-             (proxy-value (and proxy (symbol-value proxy)))
-             (puser (find-symbol (string '#:*proxy-user*) bootstrap-package))
-             (puser-value (and puser (symbol-value puser)))
-             (ppass (find-symbol (string '#:*proxy-pass*) bootstrap-package))
-             (ppass-value (and ppass (symbol-value ppass))))
-        (when (and proxy-value (not *proxy-url*))
-          (setf *proxy-url* proxy-value)
-          (setf (config-value "proxy-url") proxy-value))
-        (when (and puser-value (not *proxy-user*))
-          (setf *proxy-user* puser-value)
-          (setf (config-value "proxy-user") puser-value))
-        (when (and ppass-value (not *proxy-pass*))
-          (setf *proxy-pass* ppass-value)
-          (setf (config-value "proxy-pass") ppass-value)))))
-  (unless (ignore-errors (truename (qmerge "dists/")))
-    (let ((target (qmerge "dists/quicklisp/distinfo.txt")))
-      (ensure-directories-exist target)
-      (fetch *initial-dist-url* target)
-      (enable (find-dist "quicklisp")))))
+(push (qmerge "quicklisp/") asdf:*central-registry*)
 
-(defun setup ()
-  (unless (member 'system-definition-searcher
-                  asdf:*system-definition-search-functions*)
-    (setf asdf:*system-definition-search-functions*
-          (append asdf:*system-definition-search-functions*
-                  (list 'local-projects-searcher
-                        'system-definition-searcher))))
-  (let ((files (nconc (directory (qmerge "local-init/*.lisp"))
-                      (directory (qmerge "local-init/*.cl")))))
-    (with-simple-restart (abort "Stop loading local setup files")
-      (dolist (file (sort files #'string< :key #'pathname-name))
-        (with-simple-restart (skip "Skip local setup file ~S" file)
-          ;; Don't try to load Emacs lock files, other hidden files
-          (unless (char= (char (pathname-name file) 0)
-                         #\.)
-            (load file))))))
-  (maybe-initial-setup)
-  (ensure-directories-exist (qmerge "local-projects/"))
-  (pushnew :quicklisp *features*)
-  t)
+(let ((*compile-print* nil)
+      (*compile-verbose* nil)
+      (*load-verbose* nil)
+      (*load-print* nil))
+  (asdf:oos 'asdf:load-op "quicklisp" :verbose nil))
+
+(quicklisp:setup)

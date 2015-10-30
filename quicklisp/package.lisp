@@ -13,7 +13,10 @@
            #:ensure-file-exists
            #:split-spaces
            #:first-line
-           #:file-size))
+           #:file-size
+           #:safely-read
+           #:safely-read-file
+           #:make-versions-url))
 
 (defpackage #:ql-setup
   (:documentation
@@ -42,6 +45,7 @@
            #:abcl
            #:allegro
            #:ccl
+           #:clasp
            #:clisp
            #:cmucl
            #:cormanlisp
@@ -112,8 +116,7 @@
   (:documentation
    "A simple implementation of unpacking the 'tar' file format.")
   (:use #:cl)
-  (:export #:tarball-contents
-           #:unpack-tarball))
+  (:export #:unpack-tarball))
 
 (defpackage #:ql-gunzipper
   (:documentation
@@ -140,6 +143,8 @@
         #:ql-setup
         #:ql-gunzipper
         #:ql-minitar)
+  (:intern #:dist-version
+           #:dist-url)
   (:import-from #:ql-impl-util
                 #:delete-directory-tree
                 #:directory-entries
@@ -161,6 +166,7 @@
   (:export #:all-dists
            #:enabled-dists
            #:find-dist
+           #:find-dist-or-lose
            #:find-system
            #:find-release
            #:dist
@@ -211,7 +217,7 @@
   (:export #:release
            #:project-name
            #:system-files
-           #:archive-url-suffix
+           #:archive-url
            #:archive-size
            #:ensure-archive-file
            #:archive-content-sha1
@@ -221,6 +227,8 @@
            #:ensure-local-archive-file
            #:check-local-archive-file
            #:invalid-local-archive
+           #:invalid-local-archive-file
+           #:invalid-local-archive-release
            #:missing-local-archive
            #:badly-sized-local-archive
            #:delete-and-retry)
@@ -236,8 +244,10 @@
            #:find-asdf-system-file
            #:system-definition-searcher
            #:system-apropos
+           #:system-apropos-list
            #:dependency-tree
-           #:clean))
+           #:clean
+           #:unknown-dist))
 
 (defpackage #:ql-dist-user
   (:documentation
@@ -245,6 +255,24 @@
    clobbering any QL-DIST internals.")
   (:use #:cl
         #:ql-dist))
+
+(defpackage #:ql-bundle
+  (:documentation
+   "A package for supporting the QL:BUNDLE-SYSTEMS function.")
+  (:use #:cl #:ql-dist #:ql-impl-util)
+  (:shadow #:find-system
+           #:find-release)
+  (:export #:bundle
+           #:ensure-system
+           #:ensure-release
+           #:write-bundle
+           #:add-systems-recursively
+           #:object-not-found
+           #:system-not-found
+           #:system-not-found-system
+           #:release-not-found
+           #:bundle-directory-exists
+           #:bundle-directory-exists-directory))
 
 (defpackage #:quicklisp-client
   (:documentation
@@ -261,6 +289,11 @@
         #:ql-minitar
         #:ql-gunzipper)
   (:shadow #:uninstall)
+  (:shadowing-import-from #:ql-dist
+                          #:dist-version
+                          #:dist-url)
+  (:export #:dist-version
+           #:dist-url)
   (:export #:quickload
            #:*quickload-prompt*
            #:*quickload-verbose*
@@ -279,10 +312,16 @@
            #:setup
            #:provided-systems
            #:system-apropos
+           #:system-apropos-list
            #:system-list
+           #:client-version
+           #:client-url
+           #:available-client-versions
+           #:install-client
            #:update-client
            #:update-dist
            #:update-all-dists
+           #:available-dist-versions
            #:add-to-init-file
            #:use-only-quicklisp-systems
            #:write-asdf-manifest-file
@@ -293,7 +332,7 @@
            #:*local-project-directories*
            #:list-local-projects
            #:list-local-systems
-           #:who-depends-on))
+           #:who-depends-on
+           #:bundle-systems))
 
 (in-package #:quicklisp-client)
-

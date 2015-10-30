@@ -449,12 +449,8 @@
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'available-versions-url)))
   (declare (ignore class))
-  (let* ((subscription-url (distinfo-subscription-url dist))
-         (suffix-pos (position #\. subscription-url :from-end t))
-         (new-url (concatenate 'string
-                               (subseq subscription-url 0 suffix-pos)
-                               "-versions.txt")))
-    (setf (available-versions-url dist) new-url)))
+  (setf (available-versions-url dist)
+        (make-versions-url (distinfo-subscription-url dist))))
 
 
 (defmethod ensure-system-index-file ((dist dist))
@@ -519,10 +515,9 @@ the given NAME."
   (relative-to dist "distinfo.txt"))
 
 (defun find-dist (name)
-  (let ((pathname (merge-pathnames "distinfo.txt"
-                                   (dist-name-pathname name))))
-    (when (probe-file pathname)
-      (make-dist-from-file pathname))))
+  (find name (all-dists)
+        :key #'name
+        :test #'string=))
 
 (defmethod enabledp ((dist dist))
   (not (not (probe-file (relative-to dist "enabled.txt")))))
@@ -609,13 +604,22 @@ the given NAME."
    "Instances of this class have a special location for their
    preference files."))
 
+(defgeneric filesystem-name (object)
+  (:method (object)
+    ;; This is to work around system names like "foo/bar".
+    (let* ((name (name object))
+           (slash (position #\/ name)))
+      (if slash
+          (subseq name 0 slash)
+          name))))
+
 (defmethod preference-file ((object preference-mixin))
   (relative-to
    (dist object)
    (make-pathname :directory (list :relative
                                    "preferences"
                                    (metadata-name object))
-                              :name (name object)
+                              :name (filesystem-name object)
                               :type "txt")))
 
 (defmethod distinfo-subscription-url :around ((dist dist))
@@ -682,10 +686,20 @@ the given NAME."
     :reader invalid-local-archive-release)
    (file
     :initarg :file
-    :reader invalid-local-archive-file)))
+    :reader invalid-local-archive-file))
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for release ~S is invalid"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))))))
 
 (define-condition missing-local-archive (invalid-local-archive)
-  ())
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for release ~S is missing"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))))))
 
 (define-condition badly-sized-local-archive (invalid-local-archive)
   ((expected-size
@@ -693,7 +707,15 @@ the given NAME."
     :reader badly-sized-local-archive-expected-size)
    (actual-size
     :initarg :actual-size
-    :reader badly-sized-local-archive-actual-size)))
+    :reader badly-sized-local-archive-actual-size))
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for ~S is the wrong size: ~
+                     expected ~:D, got ~:D"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))
+             (badly-sized-local-archive-expected-size condition)
+             (badly-sized-local-archive-actual-size condition)))))
 
 (defmethod check-local-archive-file ((release release))
   (let ((file (local-archive-file release)))
@@ -939,7 +961,18 @@ the given NAME."
       (call-next-method)
       (preference (release system))))
 
+(defun thing-name-designator (designator)
+  "Convert DESIGNATOR to a string naming a thing. Strings are used
+  as-is, symbols are converted to their downcased symbol-name."
+  (typecase designator
+    (string designator)
+    (symbol (string-downcase designator))
+    (t
+     (error "~S is not a valid designator for a system or release"
+            designator))))
+
 (defun find-thing-named (find-fun name)
+  (setf name (thing-name-designator name))
   (let ((result '()))
     (dolist (dist (enabled-dists) (sort result #'> :key #'preference))
       (let ((thing (funcall find-fun name dist)))
@@ -1012,12 +1045,17 @@ FUN."
 
 
 (defgeneric dependency-tree (system)
+  (:method ((symbol symbol))
+    (dependency-tree (string-downcase symbol)))
   (:method ((string string))
-    (dependency-tree (find-system string)))
+    (let ((system (find-system string)))
+      (when system
+        (dependency-tree system))))
   (:method ((system system))
     (with-consistent-dists
-      (list* system (mapcar 'dependency-tree (required-systems system))))))
-
+      (list* system
+             (remove nil
+                     (mapcar 'dependency-tree (required-systems system)))))))
 
 (defmethod provided-systems ((object (eql t)))
   (let ((systems (loop for dist in (enabled-dists)
@@ -1030,12 +1068,22 @@ FUN."
     (sort releases #'string< :key #'name)))
 
 
-(defgeneric system-apropos (term)
+(defgeneric system-apropos-list (term)
+  (:method ((term symbol))
+    (system-apropos-list (symbol-name term)))
   (:method ((term string))
-    (dolist (system (provided-systems t))
-      (when (or (search term (name system))
-                (search term (name (release system))))
-        (format t "~A~%" system)))
+    (setf term (string-downcase term))
+    (let ((result '()))
+      (dolist (system (provided-systems t) (nreverse result))
+        (when (or (search term (name system))
+                  (search term (name (release system))))
+          (push system result))))))
+
+(defgeneric system-apropos (term)
+  (:method (term)
+    (map nil (lambda (system)
+               (format t "~A~%" system))
+         (system-apropos-list term))
     (values)))
 
 
@@ -1089,3 +1137,27 @@ FUN."
                   (split-spaces line)
                 (setf versions (acons version url versions)))))
       versions)))
+
+
+;;;
+;;; User interface bits to re-export from QL
+;;;
+
+(define-condition unknown-dist (error)
+  ((name
+    :initarg :name
+    :reader unknown-dist-name))
+  (:report (lambda (condition stream)
+             (format stream "No dist known by that name -- ~S"
+                     (unknown-dist-name condition)))))
+
+(defun find-dist-or-lose (name)
+  (let ((dist (find-dist name)))
+    (or dist
+        (error 'unknown-dist :name name))))
+
+(defun dist-url (name)
+  (canonical-distinfo-url  (find-dist-or-lose name)))
+
+(defun dist-version (name)
+  (version (find-dist-or-lose name)))

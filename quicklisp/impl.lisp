@@ -162,6 +162,25 @@
                   #:make-socket
                   #:native-translated-namestring))
 
+;;; CLASP
+
+(define-implementation-package :clasp #:ql-clasp
+  (:documentation "CLASP - http://github.com/drmeister/clasp")
+  (:class clasp)
+  (:prep
+   (require 'sockets))
+  (:intern #:host-network-address)
+  (:reexport-from #:si
+                  #:rmdir
+                  #:file-kind)
+  (:reexport-from #:sb-bsd-sockets
+                  #:get-host-by-name
+                  #:host-ent-address
+                  #:inet-socket
+                  #:socket-connect
+                  #:socket-make-stream))
+
+
 ;;; GNU CLISP
 
 (define-implementation-package :clisp #:ql-clisp

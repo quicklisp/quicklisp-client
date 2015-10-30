@@ -1,0 +1,4 @@
+*.fasl
+*~
+quicklisp.tar
+quicklisp.tar.gz

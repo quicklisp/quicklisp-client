@@ -100,3 +100,25 @@
 (defun file-size (file)
   (with-open-file (stream file :element-type '(unsigned-byte 8))
     (file-length stream)))
+
+(defun safely-read (stream)
+  "Read one form from STREAM with *READ-EVAL* bound to NIL."
+  (let ((*read-eval* nil))
+    (read stream)))
+
+(defun safely-read-file (file)
+  "Read the first form from FILE with SAFELY-READ."
+  (with-open-file (stream file)
+    (safely-read stream)))
+
+(defun make-versions-url (url)
+  "Given an URL that looks like http://foo/bar.ext, return
+http://foo/bar-versions.txt."
+  (let ((suffix-pos (position #\. url :from-end t)))
+    (unless suffix-pos
+      (error "Can't make a versions URL from ~A" url))
+    (let ((extension (subseq url suffix-pos)))
+      (concatenate 'string
+                   (subseq url 0 suffix-pos)
+                   "-versions"
+                   extension))))
