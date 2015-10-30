@@ -357,84 +357,29 @@ information."
             (encode (lisp-implementation-type))
             (version-string (lisp-implementation-version)))))
 
-(defvar *BASE64TBL* "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-")
-
-(defun to-bit (num)
-  "convert 1 octet to binary(0/1) list"
-  (loop for x from 7 downto 0 collect (ldb (byte 1 x) num)))
-
-(defun string-to-bit (str)
-  "convert string to binary(0/1) list"
-  (map 'list #'to-bit (map 'list #'char-code str)))
-
-(defun flatten (x)
-  "flatten list"
-  (labels ((rec (x acc)
-             (cond ((null x) acc)
-                   ((atom x) (cons x acc))
-                   (t (rec (car x) (rec (cdr x) acc))))))
-    (rec x nil)))
-
-(defun take-list (list num)
-  "return taken from list(first arguments) passed as the num(second argument) and rest of the list"
-  (labels ((take-n (list num acc)
-             (if (or (<= num 0)
-                     (null list))
-                 (values (nreverse acc) list)
-                 (take-n (cdr list) (- num 1) (cons (car list) acc)))))
-    (take-n list num '())))
-
-(defun split (list num)
-  "split list. each list has num(second arguments) items."
-  (labels ((split (list acc)
-             (multiple-value-bind (six rest)
-                 (take-list list num)
-               (if (null rest)
-                   (nreverse (cons six acc))
-                   (split rest (cons six acc))))))
-    (split list '())))
-
-(defun rpad (list padsize &key (pad 0))
-  "if each list's length less than padsize(second arguments), padding pad(default 0) on right side."
-  (labels ((right-padding (list padsize acc)
-             (if (null list)
-                 (nreverse acc)
-                 (let ((item (car list)))
-                   (if (< (length item) padsize)
-                       (right-padding (cdr list) padsize (cons
-                                                           (append
-                                                             item
-                                                             (make-list
-                                                               (- padsize (length item))
-                                                               :initial-element pad))
-                                                           acc))
-                       (right-padding (cdr list) padsize (cons item acc)))))))
-    (right-padding list padsize '())))
-
-(defun bit-to-num (list)
-  "convert binary(0/1) list to number"
-  (let ((ms (length list)))
-    (loop for x in list
-          for y downfrom (1- ms)
-          sum (ash x y))))
-
-
 (defun base64-enc (str)
   "create base64 encoded string from argument"
-  (format nil "~{~{~A~}~}"
-    (rpad
-      (split
-        (map 'list #'(lambda (x)
-                       (aref *BASE64TBL* x))
-              (map 'list #'bit-to-num
-                   (rpad
-                     (split
-                       (flatten
-                         (string-to-bit str))
-                       6)
-                     6)))
-        4)
-    4 :pad #\=)))
+  (flet ((to-enc (x)
+           (aref "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-" x))
+         (pad (enc-list)
+           (let ((pad-len (mod (- (length enc-list)) 4)))
+             (format nil "~{~C~}~{~C~}" enc-list
+                                        (make-sequence 'list pad-len :initial-element #\=)))))
+    (let ((enc '()))
+      (loop for ch in (map 'list #'char-code str)
+            for buf = ch then (logior (ash buf 8) ch)
+            for bitlen = 8 then (+ bitlen 8)
+            do (loop repeat (truncate bitlen 6)
+                  do
+                    (let* ((remain (- bitlen 6))
+                           (6bit (ldb (byte bitlen remain) buf)))
+                      (push (to-enc 6bit) enc)
+                      (setf buf (ldb (byte remain 0) buf))
+                      (setf bitlen (- bitlen 6))))
+            finally
+              (when (/= bitlen 0)
+                (push (to-enc (ash buf (- 6 bitlen))) enc)))
+      (pad (nreverse enc)))))
 
 (defun make-basic-authentication (user password)
   "create basic authentication string"
