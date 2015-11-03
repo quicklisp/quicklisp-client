@@ -95,8 +95,6 @@
    "A simple HTTP client.")
   (:use #:cl #:ql-network #:ql-progress #:ql-config)
   (:export #:*proxy-url*
-           #:*proxy-user*
-           #:*proxy-pass*
            #:fetch
            #:hostname
            #:port
@@ -306,8 +304,6 @@
            #:*quicklisp-home*
            #:*initial-dist-url*
            #:*proxy-url*
-           #:*proxy-user*
-           #:*proxy-pass*
            #:config-value
            #:setup
            #:provided-systems

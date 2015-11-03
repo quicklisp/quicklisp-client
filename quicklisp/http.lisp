@@ -319,8 +319,6 @@
   (subseq (storage sink) 0))
 
 (defvar *proxy-url* (config-value "proxy-url"))
-(defvar *proxy-user* (config-value "proxy-user"))
-(defvar *proxy-pass* (config-value "proxy-pass"))
 
 (defun full-proxy-path (host port path)
   (format nil "~:[http~;https~]://~A~:[:~D~;~*~]~A"
@@ -389,21 +387,27 @@ information."
 (defun make-request-buffer (host port path &key (method "GET"))
   "Return an octet vector suitable for sending as an HTTP 1.1 request."
   (setf method (string method))
-  (when *proxy-url*
-    (setf path (full-proxy-path host port path)))
-  (let ((sink (make-instance 'octet-sink)))
-    (flet ((add-line (&rest strings)
-             (apply #'add-strings sink strings)
-             (add-newline sink)))
-      (add-line method " " path " HTTP/1.1")
-      (add-line "Host: " host (if (= port 80) ""
-                                  (format nil ":~D" port)))
-      (when (and *proxy-url* *proxy-user* *proxy-pass*)
-        (add-line "Proxy-Authorization: Basic " (make-basic-authentication *proxy-user* *proxy-pass*)))
-      (add-line "Connection: close")
-      (add-line "User-Agent: " (user-agent-string))
-      (add-newline sink)
-      (sink-buffer sink))))
+  (let ((proxy-user nil)
+        (proxy-pass nil))
+    (when *proxy-url*
+      (setf path (full-proxy-path host port path))
+      (when (need-proxyauthenticate-p *proxy-url*)
+        (let ((proxy (parse-urlstring *proxy-url* :proxy-auth t)))
+          (setf proxy-user (proxy-user proxy))
+          (setf proxy-pass (proxy-pass proxy)))))
+    (let ((sink (make-instance 'octet-sink)))
+      (flet ((add-line (&rest strings)
+               (apply #'add-strings sink strings)
+               (add-newline sink)))
+        (add-line method " " path " HTTP/1.1")
+        (add-line "Host: " host (if (= port 80) ""
+                                    (format nil ":~D" port)))
+        (when (and proxy-user proxy-pass)
+          (add-line "Proxy-Authorization: Basic " (make-basic-authentication proxy-user proxy-pass)))
+        (add-line "Connection: close")
+        (add-line "User-Agent: " (user-agent-string))
+        (add-newline sink)
+        (sink-buffer sink)))))
 
 (defun sink-until-matching (matcher cbuf)
   (let ((sink (make-instance 'octet-sink)))
@@ -635,11 +639,22 @@ the indexes in the header accordingly."
     :accessor path
     :initform "/")))
 
-(defun parse-urlstring (urlstring)
+(defclass proxy-url (url)
+  ((proxy-user
+    :initarg :proxy-user
+    :accessor proxy-user
+    :initform nil)
+   (proxy-pass
+    :initarg :proxy-pass
+    :accessor proxy-pass
+    :initform nil)))
+
+
+(defun parse-urlstring (urlstring &key (proxy-auth nil))
   (setf urlstring (string-trim " " urlstring))
   (let* ((pos (mismatch urlstring "http://" :test 'char-equal))
          (mark pos)
-         (url (make-instance 'url)))
+         (url (make-instance 'proxy-url)))
     (labels ((save ()
                (subseq urlstring mark pos))
              (mark ()
@@ -653,10 +668,35 @@ the indexes in the header accordingly."
                (case char
                  (#\/
                   (setf (port url) nil)
+                  (incf pos)
                   (mark)
                   #'in-path)
                  (t
-                  #'in-host)))
+                  (if proxy-auth
+                      #'in-proxy-user
+                      #'in-host))))
+             (in-proxy-user (char)
+               (case char
+                 (:end
+                  (error "~S is not a valid PROXY URL" urlstring))
+                 (#\:
+                  (setf (proxy-user url) (save))
+                  (incf pos)
+                  (mark)
+                  #'in-proxy-pass)
+                 (t
+                  #'in-proxy-user)))
+             (in-proxy-pass (char)
+               (case char
+                 (:end
+                  (error "~S is not a valid PROXY URL" urlstring))
+                 (#\@
+                  (setf (proxy-pass url) (save))
+                  (incf pos)
+                  (mark)
+                  #'in-host)
+                 (t
+                  #'in-proxy-pass)))
              (in-host (char)
                (case char
                  ((#\/ :end)
@@ -698,9 +738,13 @@ the indexes in the header accordingly."
          (setf state (funcall state (aref urlstring pos)))
          (incf pos))))))
 
+(defun need-proxyauthenticate-p (proxy-url)
+  (and (find #\@ proxy-url)
+       t))
+
 (defun url (thing)
   (if (stringp thing)
-      (parse-urlstring thing)
+      (parse-urlstring thing :proxy-auth (need-proxyauthenticate-p thing))
       thing))
 
 (defgeneric request-buffer (method url)
@@ -714,6 +758,11 @@ the indexes in the header accordingly."
           (hostname url)
           (and (/= 80 (port url)) (port url))
           (path url)))
+
+(defun proxyurlstring (proxy-url)
+  (format nil "~@[http://~A~]~@[:~D~]"
+          (hostname proxy-url)
+          (and (/= 80 (port proxy-url)) (port proxy-url))))
 
 (defmethod print-object ((url url) stream)
   (print-unreadable-object (url stream :type t)
