@@ -166,34 +166,43 @@ Quicklisp-provided systems first, and catching ASDF missing
 dependencies too if possible."
   (setf name (string-downcase name))
   (with-simple-restart (abort "Give up on ~S" name)
-    (let ((strategy (compute-load-strategy name))
-          (tried-so-far (make-hash-table :test 'equalp)))
-      (show-load-strategy strategy)
-      (when (or (not prompt)
-                (press-enter-to-continue))
-        (tagbody
-         retry
-         (handler-case (apply-load-strategy strategy)
-           (asdf:missing-dependency-of-version (c)
-             ;; Nothing Quicklisp can do to recover from this, so just
-             ;; resignal
-             (error c))
-           (asdf:missing-dependency (c)
-             (let ((parent (asdf::missing-required-by c))
-                   (missing (asdf::missing-requires c)))
-               (typecase parent
-                 (asdf:system
-                  (if (gethash missing tried-so-far)
-                     (error "Dependency looping -- already tried to load ~
+    (let ((tried-so-far (make-hash-table :test 'equalp)))
+      (tagbody
+       retry
+         (flet ((handle-missing-component-error (c)
+                  (let ((parent (asdf::missing-required-by c))
+                        (missing (asdf::missing-requires c)))
+                    (typecase parent
+                      ((or null
+                           asdf:system)
+                       (if (gethash missing tried-so-far)
+                           (error "Dependency looping -- already tried to load ~
                                  ~A" missing)
-                     (setf (gethash missing tried-so-far) missing))
-                  (autoload-system-and-dependencies missing
-                                                   :prompt prompt)
-                  (go retry))
-                 (t
-                  ;; Error isn't from a system dependency, so there's
-                  ;; nothing to autoload
-                  (error c)))))))))
+                           (setf (gethash missing tried-so-far) missing))
+                       (autoload-system-and-dependencies missing
+                                                         :prompt prompt)
+                       (go retry))
+                      (t
+                       ;; Error isn't from a system dependency, so there's
+                       ;; nothing to autoload
+                       (error c))))))
+           (handler-case
+               (let ((strategy (compute-load-strategy name)))
+                 (show-load-strategy strategy)
+                 (when (or (not prompt)
+                           (press-enter-to-continue))
+                   (apply-load-strategy strategy)))
+             (asdf:missing-dependency-of-version (c)
+               ;; Nothing Quicklisp can do to recover from this, so just
+               ;; resignal
+               (error c))
+             (asdf:load-system-definition-error (c)
+               (let ((original-error (asdf::error-condition c)))
+                 (if (typep original-error 'asdf:missing-component)
+                     (handle-missing-component-error original-error)
+                     (error c))))
+             (asdf:missing-component (c)
+               (handle-missing-component-error c))))))
     name))
 
 (defvar *initial-dist-url*
