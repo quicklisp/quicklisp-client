@@ -132,7 +132,7 @@
         (when (and (consp form)
                    (eq (first form) 'cl:defpackage)
                    (ignore-errors (string (second form))))
-	  (show-package (second form)))
+          (show-package (second form)))
         (incf seen-so-far)
         (when (<= forms-per-char seen-so-far)
           (setf seen-so-far 0)
@@ -158,7 +158,7 @@
   (call-with-macroexpand-progress
    (lambda ()
      (format t "~&; Loading ~S~%" (name strategy))
-     (asdf:oos 'asdf:load-op (name strategy) :verbose nil))))
+     (asdf:load-system (name strategy) :verbose nil))))
 
 (defun autoload-system-and-dependencies (name &key prompt)
   "Try to load the system named by NAME, automatically loading any
