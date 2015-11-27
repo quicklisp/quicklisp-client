@@ -83,7 +83,10 @@ SYSTEM, return its full pathname."
     (loop for namestring = (read-line stream nil)
           while namestring
           when (string= system (pathname-name namestring))
-          return (truename (merge-pathnames namestring index-file)))))
+          return (or (probe-file (merge-pathnames namestring index-file))
+                     ;; If the indexed .asd file doesn't exist anymore
+                     ;; then regenerate the index and restart the search.
+                     (find-system-in-index system (make-system-index (directory-namestring index-file)))))))
 
 (defun local-projects-searcher (system-name)
   "This function is added to ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*
