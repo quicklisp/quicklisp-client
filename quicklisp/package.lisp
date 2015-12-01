@@ -96,6 +96,8 @@
   (:use #:cl #:ql-network #:ql-progress #:ql-config)
   (:export #:*proxy-url*
            #:fetch
+           #:*fetch-assoc*
+           #:scheme
            #:hostname
            #:port
            #:path
