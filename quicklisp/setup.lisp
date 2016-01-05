@@ -61,12 +61,19 @@
   system given to load is not available via ASDF or a Quicklisp
   dist."))
 
+(defun asdf-find-system-try-harder (name)
+  (handler-bind
+    ((asdf::load-system-definition-error
+       #'(lambda (c) (ql:quickload (asdf::missing-requires (asdf::error-condition c)))
+           (invoke-restart 'asdf::reinitialize-source-registry-and-retry))))
+    (asdf:find-system name nil)))
+
 (defun compute-load-strategy (name)
   (setf name (string-downcase name))
   (let ((asdf-systems '())
         (quicklisp-systems '()))
     (labels ((recurse (name)
-               (let ((asdf-system (asdf:find-system name nil))
+               (let ((asdf-system (asdf-find-system-try-harder name))
                      (quicklisp-system (find-system name)))
                  (cond (asdf-system
                         (push asdf-system asdf-systems))
