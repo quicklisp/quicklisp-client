@@ -790,7 +790,7 @@ the indexes in the header accordingly."
              (too-many-redirects-count condition)
              (too-many-redirects-url condition)))))
 
-(defvar *fetch-scheme-functions* '(("http" . fetch%)))
+(defvar *fetch-scheme-functions* '(("http" . http-fetch)))
 
 (defun fetch (url file &rest rest)
   "Request URL and write the body of the response to FILE."
@@ -800,7 +800,7 @@ the indexes in the header accordingly."
         (apply call (urlstring url) file rest)
         (error "Unknow scheme ~S" url))))
          
-(defun fetch% (url file &key (follow-redirects t) quietly
+(defun http-fetch (url file &key (follow-redirects t) quietly
               (if-exists :rename-and-delete)
               (maximum-redirects *maximum-redirects*))
   (setf url (merge-urls url *default-url-defaults*))
