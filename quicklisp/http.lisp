@@ -790,12 +790,12 @@ the indexes in the header accordingly."
              (too-many-redirects-count condition)
              (too-many-redirects-url condition)))))
 
-(defvar *fetch-assoc* '(("http" . fetch%)))
+(defvar *fetch-scheme-functions* '(("http" . fetch%)))
 
 (defun fetch (url file &rest rest)
   "Request URL and write the body of the response to FILE."
   (let* ((url (merge-urls url *default-url-defaults*))
-         (call (cdr (assoc (scheme url) *fetch-assoc* :test 'equal))))
+         (call (cdr (assoc (scheme url) *fetch-scheme-functions* :test 'equal))))
     (if call
         (apply call (urlstring url) file rest)
         (error "Unknow scheme ~S" url))))
