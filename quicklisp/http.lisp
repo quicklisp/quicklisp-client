@@ -790,7 +790,9 @@ the indexes in the header accordingly."
              (too-many-redirects-count condition)
              (too-many-redirects-url condition)))))
 
-(defvar *fetch-scheme-functions* '(("http" . http-fetch)))
+(defvar *fetch-scheme-functions*
+  '(("http" . http-fetch))
+  "assoc list to decide which scheme-function are called by FETCH function.")
 
 (defun fetch (url file &rest rest)
   "Request URL and write the body of the response to FILE."
@@ -803,6 +805,7 @@ the indexes in the header accordingly."
 (defun http-fetch (url file &key (follow-redirects t) quietly
               (if-exists :rename-and-delete)
               (maximum-redirects *maximum-redirects*))
+  "default scheme-function for http protocol."
   (setf url (merge-urls url *default-url-defaults*))
   (setf file (merge-pathnames file))
   (let ((redirect-count 0)
