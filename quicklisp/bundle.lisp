@@ -136,9 +136,15 @@
 (defun add-systems-recursively (names bundle)
   (with-consistent-dists
     (labels ((add-one (name)
-               (let ((system (ensure-system name bundle)))
-                 (dolist (required-system-name (required-systems system))
-                   (add-one required-system-name)))))
+               (unless (member name *ignored-systems* :test 'equalp)
+                 (let ((system
+                        (restart-case
+                            (ensure-system name bundle)
+                          (omit ()
+                            :report "Ignore this system and omit it from the bundle."))))
+                   (when system
+                     (dolist (required-system-name (required-systems system))
+                       (add-one required-system-name)))))))
       (map nil #'add-one names)))
   bundle)
 
