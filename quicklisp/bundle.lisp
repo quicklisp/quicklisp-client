@@ -26,6 +26,10 @@
 
 (defgeneric write-bundle (bundle target))
 
+(defvar *ignored-systems*
+  (list "asdf")
+  "Systems that might appear in depends-on lists in Quicklisp, but
+  which can't be bundled.")
 
 ;;; Implementation
 
