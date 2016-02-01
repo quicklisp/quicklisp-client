@@ -222,7 +222,7 @@
            #:archive-size
            #:ensure-archive-file
            #:archive-content-sha1
-           #:archive-file-md5
+           #:archive-md5
            #:prefix
            #:local-archive-file
            #:ensure-local-archive-file
