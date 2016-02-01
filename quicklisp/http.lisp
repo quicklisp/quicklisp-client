@@ -365,8 +365,9 @@ information."
              (apply #'add-strings sink strings)
              (add-newline sink)))
       (add-line method " " path " HTTP/1.1")
-      (add-line "Host: " host (if (eql port 80) ""
-                                  (format nil ":~D" port)))
+      (add-line "Host: " host (if (integerp port)
+                                  (format nil ":~D" port)
+                                  ""))
       (add-line "Connection: close")
       (add-line "User-Agent: " (user-agent-string))
       (add-newline sink)
