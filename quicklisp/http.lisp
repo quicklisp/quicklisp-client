@@ -801,7 +801,7 @@ the indexes in the header accordingly."
          (call (cdr (assoc (scheme url) *fetch-scheme-functions* :test 'equal))))
     (if call
         (apply call (urlstring url) file rest)
-        (error "Unknow scheme ~S" url))))
+        (error "Unknown scheme ~S" url))))
 
 (defun http-fetch (url file &key (follow-redirects t) quietly
               (if-exists :rename-and-delete)
