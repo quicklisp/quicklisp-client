@@ -681,7 +681,7 @@ the indexes in the header accordingly."
 (defgeneric request-buffer (method url)
   (:method (method url)
     (setf url (url url))
-    (make-request-buffer (hostname url) (port url) (or (path url) 80)
+    (make-request-buffer (hostname url) (or (port url) 80) (path url)
                          :method method)))
 
 (defun urlstring (url)
@@ -802,7 +802,7 @@ the indexes in the header accordingly."
     (if call
         (apply call (urlstring url) file rest)
         (error "Unknow scheme ~S" url))))
-         
+
 (defun http-fetch (url file &key (follow-redirects t) quietly
               (if-exists :rename-and-delete)
               (maximum-redirects *maximum-redirects*))
