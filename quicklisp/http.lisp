@@ -322,12 +322,13 @@
 
 (defun full-proxy-path (host port path)
   (format nil "~:[http~;https~]://~A~:[:~D~;~*~]~A"
-                       (eql port 443)
-                       host
-                       (or (eql port 80)
-                           (eql port 443))
-                       port
-                       path))
+          (eql port 443)
+          host
+          (or (null port)
+              (eql port 80)
+              (eql port 443))
+          port
+          path))
 
 (defun user-agent-string ()
   "Return a string suitable for using as the User-Agent value in HTTP
