@@ -18,6 +18,12 @@
            #:safely-read-file
            #:make-versions-url))
 
+(defpackage #:ql-utf-8
+  (:documentation
+   "Functions to convert octet vectors encoded as UTF-8 to strings.")
+  (:use #:cl)
+  (:export #:decode-utf-8))
+
 (defpackage #:ql-setup
   (:documentation
    "Functions and variables initialized early in the Quicklisp client
