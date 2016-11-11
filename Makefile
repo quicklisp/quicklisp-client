@@ -3,7 +3,7 @@ all: gzip
 	gzip -fnk9 quicklisp.tar
 
 gzip:
-	gzip -fnk9 {setup,asdf}.lisp # maybe not. brace expansion is only available in bash
+	gzip -fnk9 setup.lisp asdf.lisp
 
 clean:
 	rm -f quicklisp.tar quicklisp.tar.gz setup.lisp.gz asdf.lisp.gz
