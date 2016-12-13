@@ -60,9 +60,10 @@
   (:documentation
    "Utility functions that require implementation-specific
    functionality.")
-  (:use #:cl #:ql-impl)
+  (:use #:cl #:ql-impl #:ql-setup)
   (:export #:call-with-quiet-compilation
            #:add-to-init-file
+           #:configure-asdf
            #:rename-directory
            #:delete-directory
            #:probe-directory
@@ -322,6 +323,7 @@
            #:update-all-dists
            #:available-dist-versions
            #:add-to-init-file
+           #:configure-asdf
            #:use-only-quicklisp-systems
            #:write-asdf-manifest-file
            #:where-is-system

@@ -141,6 +141,14 @@ quicklisp at CL startup."
         (write-init-forms stream)))
     init-file))
 
+(defun configure-asdf (&optional (filename #p"50-quicklisp.conf"))
+  (let ((asdf-conf (merge-pathnames filename
+                                    (asdf:user-source-registry-directory))))
+    (with-open-file (out asdf-conf
+                         :direction :output
+                         :if-exists :error)
+      (prin1 `(:tree ,*quicklisp-home*) out))
+    asdf-conf))
 
 
 ;;;
