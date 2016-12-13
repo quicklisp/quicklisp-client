@@ -48,14 +48,16 @@
 (defun system-list ()
   (provided-systems t))
 
-(defun update-dist (dist &key (prompt t))
+(defun update-dist (dist &key (prompt t) (cleanp t))
   (when (stringp dist)
     (setf dist (find-dist dist)))
   (let ((new (available-update dist)))
     (cond (new
            (show-update-report dist new)
            (when (or (not prompt) (press-enter-to-continue))
-             (update-in-place dist new)))
+             (update-in-place dist new)
+             (when cleanp
+               (clean dist))))
           ((not (subscribedp dist))
            (format t "~&You are not subscribed to ~S."
                    (name dist)))
