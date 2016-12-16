@@ -156,12 +156,8 @@
 (defmethod unpack-release (release target)
   (let ((*default-pathname-defaults* (truename
                                       (ensure-directories-exist target)))
-        (archive (ensure-local-archive-file release))
-        (temp-tar (ensure-directories-exist
-                   (ql-setup:qmerge "tmp/bundle.tar"))))
-    (ql-gunzipper:gunzip archive temp-tar)
-    (ql-minitar:unpack-tarball temp-tar :directory "software/")
-    (delete-file temp-tar)
+        (archive (ensure-local-archive-file release)))
+    (extract archive "software/" :temp-tar (ql-setup:qmerge "tmp/bundle.tar"))
     release))
 
 (defmethod unpack-releases ((bundle bundle) target)

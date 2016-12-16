@@ -125,6 +125,17 @@
   (:use #:cl)
   (:export #:gunzip))
 
+(defpackage #:ql-extract
+  (:documentation
+   "An simple dispatcher to extract archives.")
+  (:use #:cl
+        #:ql-minitar
+        #:ql-gunzipper)
+  (:export #:extract
+           #:*extract-type-functions*
+           #:tgz-extract
+           #:tar-extract))
+
 (defpackage #:ql-cdb
   (:documentation
    "Read and write CDB files; code adapted from ZCDB.")
@@ -142,8 +153,7 @@
         #:ql-util
         #:ql-http
         #:ql-setup
-        #:ql-gunzipper
-        #:ql-minitar)
+        #:ql-extract)
   (:intern #:dist-version
            #:dist-url)
   (:import-from #:ql-impl-util
@@ -260,7 +270,7 @@
 (defpackage #:ql-bundle
   (:documentation
    "A package for supporting the QL:BUNDLE-SYSTEMS function.")
-  (:use #:cl #:ql-dist #:ql-impl-util)
+  (:use #:cl #:ql-dist #:ql-impl-util #:ql-extract)
   (:shadow #:find-system
            #:find-release)
   (:export #:bundle
@@ -287,8 +297,7 @@
         #:ql-http
         #:ql-setup
         #:ql-config
-        #:ql-minitar
-        #:ql-gunzipper)
+        #:ql-extract)
   (:shadow #:uninstall)
   (:shadowing-import-from #:ql-dist
                           #:dist-version

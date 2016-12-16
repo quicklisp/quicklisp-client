@@ -51,7 +51,7 @@
     ;; Fetch and unpack quicklisp.tar if needed
     (when new-client-tar-p
       (fetch-client-file-info (client-tar-info new-info) local-temp-tar)
-      (unpack-tarball local-temp-tar :directory work-directory))
+      (extract local-temp-tar work-directory))
     ;; Fetch setup.lisp if needed
     (when new-setup-p
       (fetch-client-file-info (setup-info new-info) local-setup))
