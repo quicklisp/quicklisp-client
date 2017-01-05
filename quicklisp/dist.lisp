@@ -1109,8 +1109,13 @@ FUN."
           (set-difference present-archives known-archives
                           :test 'equalp))
          (garbage-directories
+          ;; Use the namestring here on the theory that pathnames with
+          ;; equalp namestrings are sufficiently the same. On
+          ;; LispWorks, for example, identical namestrings can still
+          ;; differ in :name, :type, and more.
           (set-difference present-directories known-directories
-                          :test 'equalp)))
+                          :test 'equalp
+                          :key 'namestring)))
     (map nil 'delete-file garbage-archives)
     (map nil 'delete-directory-tree garbage-directories)))
 
