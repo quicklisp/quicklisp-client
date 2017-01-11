@@ -954,7 +954,11 @@ the given NAME."
                                 (ensure-system-cdb-file dist))))
           (when line
             (setf (gethash system-name index)
-                  (make-system-from-line line dist)))))))
+                  (make-system-from-line line dist))))
+        (let ((slash-index (position #\/ system-name)))
+          (when (and slash-index
+                     (plusp slash-index))
+            (find-system-in-dist (subseq system-name 0 slash-index) dist))))))
 
 (defmethod preference ((system system))
   (if (probe-file (preference-file system))
