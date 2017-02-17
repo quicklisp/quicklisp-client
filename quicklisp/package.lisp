@@ -68,6 +68,7 @@
            #:probe-directory
            #:directory-entries
            #:delete-directory-tree
+           #:map-directory-tree
            #:native-namestring
            #:directory-write-date))
 

@@ -39,12 +39,21 @@
   "Return the system index file for the directory PATHNAME."
   (merge-pathnames "system-index.txt" pathname))
 
+(defun matching-directory-files (directory wild)
+  (let ((result '()))
+    (map-directory-tree directory
+                        (lambda (file)
+                          (when (pathname-match-p file wild)
+                            (push file result))))
+    result))
+
 (defun local-project-system-files (pathname)
   "Return a list of system files under PATHNAME."
   (let* ((wild (merge-pathnames "**/*.asd" pathname))
-         (files (sort (directory wild)
+         (files (matching-directory-files pathname wild)))
+    (setf files (sort files
                       #'string<
-                      :key #'namestring)))
+                      :key #'namestring))
     (stable-sort files
                  #'<
                  :key (lambda (file)

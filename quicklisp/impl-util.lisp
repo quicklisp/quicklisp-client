@@ -206,7 +206,8 @@ quicklisp at CL startup."
                #+abcl :resolve-symlinks #+abcl nil))
   (:implementation ccl
     (directory (merge-pathnames *wild-entry* directory)
-               #+ccl :directories #+ccl t))
+               #+ccl :directories #+ccl t
+               #+ccl :follow-links #+ccl nil))
   (:implementation clasp
     (setf directory (truename directory))
     (nconc
@@ -313,4 +314,18 @@ quicklisp at CL startup."
         (warn "delete-directory-tree - not a directory, ~
                deleting anyway -- ~s" pathname)
         (delete-file pathname))))
+
+(defun map-directory-tree (directory fun)
+  "Call FUN for every file in directory and all its subdirectories,
+recursively. Does not follow symlinks."
+  (let ((directories-to-process (list directory)))
+    (loop
+      (unless directories-to-process
+        (return))
+      (let* ((current (pop directories-to-process))
+             (entries (directory-entries current)))
+        (dolist (entry entries)
+          (if (directoryp entry)
+              (push entry directories-to-process)
+              (funcall fun entry)))))))
 
