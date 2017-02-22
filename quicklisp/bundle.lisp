@@ -6,9 +6,9 @@
 ;;; creating a directory structure and metadata in which those systems
 ;;; can be loaded without involving Quicklisp.
 ;;;
-;;; This works only for systems that are directly provided by
-;;; Quicklisp. It can't reach out into ASDF-land and copy sources
-;;; around.
+;;; This works for systems provided directly Quicklisp, or systems in
+;;; the Quicklisp local-projects directories (if
+;;; :include-local-projects is specified).
 
 (defgeneric find-system (system bundle))
 (defgeneric add-system (system bundle))
@@ -73,14 +73,33 @@
              (bundle-directory-exists-directory condition)))))
 
 
+(defun iso8601-time-stamp (&optional (time (get-universal-time)))
+  (multiple-value-bind (second minute hour day month year)
+      (decode-universal-time time 0)
+     (format nil "~4,'0D-~2,'0D-~2,'0DT~
+                  ~2,'0D:~2,'0D:~2,'0DZ"
+             year month day
+             hour minute second)))
+
+
 (defclass bundle ()
-  ((release-table
+  ((requested-systems
+    :initarg :requested-systems
+    :reader requested-systems
+    :documentation "Names of the systems requested directly for
+    bundling.")
+   (creation-time
+    :initarg :creation-time
+    :reader creation-time)
+   (release-table
     :initarg :release-table
     :reader release-table)
    (system-table
     :initarg :system-table
     :reader system-table))
   (:default-initargs
+   :requested-systems nil
+   :creation-time (iso8601-time-stamp)
    :release-table (make-hash-table :test 'equalp)
    :system-table (make-hash-table :test 'equalp)))
 
@@ -199,11 +218,30 @@
                        :directory (append (pathname-directory pathname)
                                           (list name))))))
 
+(defun bundle-metadata-plist (bundle)
+  (list :creation-time (creation-time bundle)
+        :requested-systems (requested-systems bundle)
+        :lisp-info (list :machine-instance (machine-instance)
+                         :machine-type (machine-type)
+                         :machine-version (machine-version)
+                         :lisp-implementation-type (lisp-implementation-type)
+                         :lisp-implementation-version (lisp-implementation-version))
+        :quicklisp-info (list :home (namestring ql:*quicklisp-home*)
+                              :local-project-directories
+                              (mapcar 'namestring ql:*local-project-directories*)
+                              :dists
+                              (loop for dist in (enabled-dists)
+                                    collect (list :name (name dist)
+                                                  :dist-url
+                                                  (canonical-distinfo-url dist)
+                                                  :version (version dist))))))
+
 (defmethod write-bundle ((bundle bundle) target)
   (unpack-releases bundle target)
   (let ((index-file (merge-pathnames "system-index.txt" target))
         (loader-file (merge-pathnames "bundle.lisp" target))
-        (local-projects (merge-pathnames "local-projects/" target)))
+        (local-projects (merge-pathnames "local-projects/" target))
+        (metadata-file (merge-pathnames "bundle-info.sexp" target)))
     (ensure-directories-exist local-projects)
     (with-open-file (stream index-file :direction :output
                             :if-exists :supersede)
@@ -211,10 +249,54 @@
     (with-open-file (stream loader-file :direction :output
                             :if-exists :supersede)
       (write-loader-script bundle stream))
+    (with-open-file (stream metadata-file :direction :output
+                            :if-exists :supersede)
+      (with-standard-io-syntax
+        (let ((*print-pretty* t))
+          (prin1 (bundle-metadata-plist bundle) stream)
+          (terpri stream))))
     (probe-file loader-file)))
 
 
-(defun ql:bundle-systems (system-names &key to (overwrite t))
+(defun copy-file (from-file to-file)
+  (with-open-file (from-stream from-file :element-type '(unsigned-byte 8))
+    (let ((buffer (make-array 10000 :element-type '(unsigned-byte 8))))
+      (with-open-file (to-stream to-file
+                                 :direction :output
+                                 :if-exists :supersede
+                                 :element-type '(unsigned-byte 8))
+        (loop
+          (let ((end-index (read-sequence buffer from-stream)))
+            (when (zerop end-index)
+              (return to-file))
+            (write-sequence buffer to-stream :end end-index)))))))
+
+(defun copy-directory-tree (from-directory to-directory)
+  (map-directory-tree
+   from-directory
+   (lambda (from-pathname)
+     (let* ((relative (enough-namestring from-pathname from-directory))
+            (to-pathname (merge-pathnames relative to-directory)))
+       (ensure-directories-exist to-pathname)
+       (copy-file from-pathname to-pathname)))))
+
+(defun copy-local-projects-directories (local-projects-directories
+                                        to-directory)
+  "Copy the local-projects directories to TO-DIRECTORY. Each one gets
+  a distinct subdirectory."
+  (loop for prefix from 0
+        for prefix-directory = (make-pathname :directory
+                                              (list :relative
+                                                    (format nil "~4,'0X" prefix)))
+        for from-directory in local-projects-directories
+        for real-to-directory = (merge-pathnames prefix-directory to-directory)
+        do
+        (ensure-directories-exist real-to-directory)
+        (copy-directory-tree from-directory real-to-directory)))
+
+
+(defun ql:bundle-systems (system-names
+                          &key include-local-projects to (overwrite t))
   "In the directory TO, construct a self-contained bundle of libraries
 based on SYSTEM-NAMES. For each system named, and its recursive
 required systems, unpack its release archive in TO/software/, and
@@ -223,10 +305,15 @@ QL:WRITE-ASDF-MANIFEST-FILE, to TO/system-index.txt. Write a loader
 script to TO/bundle.lisp that, when loaded via CL:LOAD, configures
 ASDF to load systems from the bundle before any other system.
 
-SYSTEM-NAMES must name systems provided directly by Quicklisp."
+SYSTEM-NAMES must name systems provided directly by Quicklisp.
+
+If INCLUDE-LOCAL-PROJECTS is true, each directory in
+QL:*LOCAL-PROJECT-DIRECTORIES* is copied into the bundle and loaded
+before any of the other bundled systems."
   (unless to
     (error "TO argument must be provided"))
-  (let* ((bundle (make-instance 'bundle))
+  (let* ((bundle (make-instance 'bundle
+                                :requested-systems system-names))
          (to (coerce-to-directory to))
          (software (merge-pathnames "software/" to)))
     (when (and (probe-directory to)
@@ -237,5 +324,13 @@ SYSTEM-NAMES must name systems provided directly by Quicklisp."
     (when (probe-directory software)
       (delete-directory-tree software))
     (add-systems-recursively system-names bundle)
+    (when include-local-projects
+      (let ((target (merge-pathnames "bundled-local-projects/"
+                                     to)))
+        (when (probe-directory target)
+          (delete-directory-tree target))
+        (copy-local-projects-directories ql:*local-project-directories*
+                                         target)
+        (ql::make-system-index target)))
     (values (write-bundle bundle to)
             bundle)))
