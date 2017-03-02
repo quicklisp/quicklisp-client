@@ -31,6 +31,11 @@
   "Systems that might appear in depends-on lists in Quicklisp, but
   which can't be bundled.")
 
+(defvar *bundle-progress-output*
+  (make-synonym-stream '*trace-output*)
+  "Informative output related to creating the bundle is sent to this
+  stream.")
+
 ;;; Implementation
 
 ;;; Conditions
@@ -259,26 +264,41 @@
 
 
 (defun copy-file (from-file to-file)
-  (with-open-file (from-stream from-file :element-type '(unsigned-byte 8))
-    (let ((buffer (make-array 10000 :element-type '(unsigned-byte 8))))
-      (with-open-file (to-stream to-file
-                                 :direction :output
-                                 :if-exists :supersede
-                                 :element-type '(unsigned-byte 8))
-        (loop
-          (let ((end-index (read-sequence buffer from-stream)))
-            (when (zerop end-index)
-              (return to-file))
-            (write-sequence buffer to-stream :end end-index)))))))
+  (with-open-file (from-stream from-file :element-type '(unsigned-byte 8)
+                               :if-does-not-exist nil)
+    (when from-stream
+      (let ((buffer (make-array 10000 :element-type '(unsigned-byte 8))))
+        (with-open-file (to-stream to-file
+                                   :direction :output
+                                   :if-exists :supersede
+                                   :element-type '(unsigned-byte 8))
+          (loop
+            (let ((end-index (read-sequence buffer from-stream)))
+              (when (zerop end-index)
+                (return to-file))
+              (write-sequence buffer to-stream :end end-index))))))))
 
 (defun copy-directory-tree (from-directory to-directory)
+  ;; Use the truename here to ensure that relative pathnames match up
+  ;; properly. For example, on SBCL, "~/foo/bar/" entries are not
+  ;; relative to "/home/baz/foo/bar/" entries.
+  (setf from-directory (truename from-directory))
   (map-directory-tree
    from-directory
    (lambda (from-pathname)
-     (let* ((relative (enough-namestring from-pathname from-directory))
-            (to-pathname (merge-pathnames relative to-directory)))
-       (ensure-directories-exist to-pathname)
-       (copy-file from-pathname to-pathname)))))
+     (when (probe-file from-pathname)
+       (let* ((relative (enough-namestring from-pathname from-directory))
+              (relative-directory (pathname-directory relative))
+              (to-pathname (merge-pathnames relative to-directory)))
+         (unless (or (null relative-directory)
+                     (eql (first relative-directory)
+                          :relative))
+           (error "Expected relative pathname to copy from ~A ~
+                   - bad symlink? - ~S"
+                  from-pathname
+                  relative))
+         (ensure-directories-exist to-pathname)
+         (copy-file from-pathname to-pathname))))))
 
 (defun copy-local-projects-directories (local-projects-directories
                                         to-directory)
@@ -291,8 +311,13 @@
         for from-directory in local-projects-directories
         for real-to-directory = (merge-pathnames prefix-directory to-directory)
         do
+        (format *bundle-progress-output*
+                "~&; Copying ~A to bundle..." from-directory )
+        (force-output *bundle-progress-output*)
         (ensure-directories-exist real-to-directory)
-        (copy-directory-tree from-directory real-to-directory)))
+        (copy-directory-tree from-directory real-to-directory)
+        (format *bundle-progress-output* "done.~%")
+        (force-output *bundle-progress-output*)))
 
 
 (defun ql:bundle-systems (system-names
@@ -324,13 +349,14 @@ before any of the other bundled systems."
     (when (probe-directory software)
       (delete-directory-tree software))
     (add-systems-recursively system-names bundle)
-    (when include-local-projects
-      (let ((target (merge-pathnames "bundled-local-projects/"
-                                     to)))
-        (when (probe-directory target)
-          (delete-directory-tree target))
+    (let ((bundled-local-projects (merge-pathnames "bundled-local-projects/"
+                                                   to)))
+      (when include-local-projects
+        (when (probe-directory bundled-local-projects)
+          (delete-directory-tree bundled-local-projects))
         (copy-local-projects-directories ql:*local-project-directories*
-                                         target)
-        (ql::make-system-index target)))
+                                         bundled-local-projects)
+        (ensure-directories-exist bundled-local-projects)
+        (ql::make-system-index bundled-local-projects)))
     (values (write-bundle bundle to)
             bundle)))

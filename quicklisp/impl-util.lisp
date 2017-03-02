@@ -200,7 +200,11 @@ quicklisp at CL startup."
   list, or NIL if there are no directory entries. Excludes the \".\"
   and \"..\" entries.")
   (:implementation allegro
-    (directory directory))
+    (directory directory
+               #+allegro :directories-are-files
+               #+allegro nil
+               #+allegro :follow-symbolic-links
+               #+allegro nil))
   (:implementation abcl
     (directory (merge-pathnames *wild-entry* directory)
                #+abcl :resolve-symlinks #+abcl nil))
@@ -209,18 +213,22 @@ quicklisp at CL startup."
                #+ccl :directories #+ccl t
                #+ccl :follow-links #+ccl nil))
   (:implementation clasp
-    (setf directory (truename directory))
     (nconc
      (directory (merge-pathnames *wild-entry* directory)
                 #+clasp :resolve-symlinks #+clasp nil)
      (directory (merge-pathnames *wild-relative* directory)
                 #+clasp :resolve-symlinks #+clasp nil)))
   (:implementation clisp
-    (mapcar 'first
-            (nconc (directory (merge-pathnames *wild-entry* directory)
-                              #+clisp :full #+clisp t)
-                   (directory (merge-pathnames *wild-relative* directory)
-                              #+clisp :full #+clisp t))))
+    ;; :full gives pathnames as well as truenames, BUT: it returns a
+    ;; singleton pathname, not a list, on dead symlinks.
+    (remove nil
+            (mapcar (lambda (entry) (and (listp entry) (first entry)))
+                    (nconc (directory (merge-pathnames *wild-entry* directory)
+                                      #+clisp :full #+clisp t
+                                      #+clisp :if-does-not-exist #+clisp :keep)
+                           (directory (merge-pathnames *wild-relative* directory)
+                                      #+clisp :full #+clisp t
+                                      #+clisp :if-does-not-exist #+clisp :keep)))))
   (:implementation cmucl
     (directory (merge-pathnames *wild-entry* directory)
                #+cmucl :truenamep #+cmucl nil))
@@ -232,7 +240,6 @@ quicklisp at CL startup."
                #+lispworks :directories #+lispworks t
                #+lispworks :link-transparency #+lispworks nil))
   (:implementation ecl
-    (setf directory (truename directory))
     (nconc
      (directory (merge-pathnames *wild-entry* directory)
                 #+ecl :resolve-symlinks #+ecl nil)
@@ -317,8 +324,10 @@ quicklisp at CL startup."
 
 (defun map-directory-tree (directory fun)
   "Call FUN for every file in directory and all its subdirectories,
-recursively. Does not follow symlinks."
-  (let ((directories-to-process (list directory)))
+recursively. Uses the truename of directory as a starting point. Does
+not follow symlinks, but, on some implementations, DOES include
+potentially dead symlinks."
+  (let ((directories-to-process (list (truename directory))))
     (loop
       (unless directories-to-process
         (return))

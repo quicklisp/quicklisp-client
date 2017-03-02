@@ -106,9 +106,11 @@
               (make-table :data-source (relative "system-index.txt")
                           :init-function #'initialize-bundled-systems-table)))
            (make-bundled-local-projects-systems-table ()
-             (initialize
-              (make-table :data-source (relative "bundled-local-projects/system-index.txt")
-                          :init-function #'initialize-bundled-systems-table)))
+             (let ((data-source (relative "bundled-local-projects/system-index.txt")))
+               (when (probe-file data-source)
+                 (initialize
+                  (make-table :data-source data-source
+                              :init-function #'initialize-bundled-systems-table)))))
            (make-local-projects-table ()
              (initialize
               (make-table :data-source (relative "local-projects/")
@@ -148,8 +150,8 @@
              (existing-tables (get searcher-name indicator))
              (filter (=matching-data-sources bundled local)))
         (setf (get searcher-name indicator)
-              (list* local bundled-local-projects bundled
-                     (delete-if filter existing-tables)))
+              (remove nil (list* local bundled-local-projects bundled
+                                 (delete-if filter existing-tables))))
         (clear-asdf local)
         (clear-asdf bundled-local-projects)
         (clear-asdf bundled))
