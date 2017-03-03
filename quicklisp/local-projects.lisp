@@ -64,6 +64,7 @@
 (defun make-system-index (pathname)
   "Create a system index file for all system files under
 PATHNAME. Current format is one native namestring per line."
+  (setf pathname (truename pathname))
   (with-open-file (stream (system-index-file pathname)
                           :direction :output
                           :if-exists :rename-and-delete)
