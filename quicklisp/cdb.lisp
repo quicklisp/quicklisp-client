@@ -1,4 +1,4 @@
-;;;; cdb.lisp
+;; cdb.lisp
 
 (in-package #:ql-cdb)
 
@@ -143,9 +143,9 @@ string."
                        (decode-octets value)))
             cdb))
 
-
-;;; Writing CDB files
-
+;;
+;; Writing CDB files
+;;
 (defun write-cdb-u32 (u32 stream)
   "Write an (unsigned-byte 32) value to STREAM in little-endian order."
   (write-byte (ldb (byte 8 0) u32) stream)
@@ -230,7 +230,6 @@ pointer entry."
   (print-unreadable-object (bucket stream :type t)
     (format stream "~D entr~:@P" (entry-count bucket))))
 
-
 (defclass cdb-writer ()
   ((buckets
     :initarg :buckets
@@ -245,7 +244,6 @@ pointer entry."
    :end-of-records-position 2048
    :buckets (map-into (make-array 256)
                       (lambda () (make-instance 'hash-table-bucket)))))
-
 
 (defun add-record (key value cdb-writer)
   "Add KEY and VALUE to a cdb file. KEY and VALUE should both
@@ -333,9 +331,9 @@ operation, FILE and TEMP-FILE must be on the same filesystem."
                             (lambda (,cdb)
                               ,@body)))
 
-
-;;; Index file (systems.txt, releases.txt) conversion
-
+;;
+;; Index file (systems.txt, releases.txt) conversion
+;;
 (defun convert-index-file (index-file
                            &key (cdb-file (make-pathname :type "cdb"
                                                          :defaults index-file))

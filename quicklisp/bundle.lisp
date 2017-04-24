@@ -1,14 +1,14 @@
-;;;; bundle.lisp
+;; bundle.lisp
 
 (in-package #:ql-bundle)
 
-;;; Bundling is taking a set of Quicklisp-provided systems and
-;;; creating a directory structure and metadata in which those systems
-;;; can be loaded without involving Quicklisp.
-;;;
-;;; This works for systems provided directly Quicklisp, or systems in
-;;; the Quicklisp local-projects directories (if
-;;; :include-local-projects is specified).
+;; Bundling is taking a set of Quicklisp-provided systems and
+;; creating a directory structure and metadata in which those systems
+;; can be loaded without involving Quicklisp.
+;;
+;; This works for systems provided directly Quicklisp, or systems in
+;; the Quicklisp local-projects directories (if
+;; :include-local-projects is specified).
 
 (defgeneric find-system (system bundle))
 (defgeneric add-system (system bundle))
@@ -36,10 +36,10 @@
   "Informative output related to creating the bundle is sent to this
   stream.")
 
-;;; Implementation
-
-;;; Conditions
-
+;;
+;; Bundle Implementation
+;;
+;; Conditions
 (define-condition bundle-error (error) ())
 
 (define-condition object-not-found (bundle-error)
@@ -77,7 +77,6 @@
      (format stream "Bundle directory ~A already exists"
              (bundle-directory-exists-directory condition)))))
 
-
 (defun iso8601-time-stamp (&optional (time (get-universal-time)))
   (multiple-value-bind (second minute hour day month year)
       (decode-universal-time time 0)
@@ -85,7 +84,6 @@
                   ~2,'0D:~2,'0D:~2,'0DZ"
              year month day
              hour minute second)))
-
 
 (defclass bundle ()
   ((requested-systems
@@ -160,7 +158,6 @@
   (or (find-release name bundle)
       (add-release name bundle)))
 
-
 (defun add-systems-recursively (names bundle)
   (with-consistent-dists
     (labels ((add-one (name)
@@ -175,7 +172,6 @@
                        (add-one required-system-name)))))))
       (map nil #'add-one names)))
   bundle)
-
 
 (defmethod unpack-release (release target)
   (let ((*default-pathname-defaults* (truename
@@ -261,7 +257,6 @@
           (prin1 (bundle-metadata-plist bundle) stream)
           (terpri stream))))
     (probe-file loader-file)))
-
 
 (defun copy-file (from-file to-file)
   (with-open-file (from-stream from-file :element-type '(unsigned-byte 8)

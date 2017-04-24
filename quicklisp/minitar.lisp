@@ -24,7 +24,6 @@
         (incf offset +block-size+))
     vector))
 
-
 (defun decode-pax-header-record (vector offset)
   "Decode VECTOR as pax extended header data. Returns the keyword and
 value it specifies as multiple values."

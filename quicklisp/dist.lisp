@@ -1,10 +1,7 @@
 ;;;; dist.lisp
-
 (in-package #:ql-dist)
 
-
-;;; Generic functions
-
+;; Generic functions
 (defgeneric dist (object)
   (:documentation
    "Return the dist of OBJECT."))
@@ -59,7 +56,6 @@
    "Return a list of all releases in all enabled dists with the given
    NAME, sorted by preference."))
 
-
 (defgeneric base-directory (object)
   (:documentation
    "Return the base directory pathname of OBJECT.")
@@ -71,7 +67,6 @@
    "Merge PATHNAME with the base-directory of OBJECT.")
   (:method (object pathname)
     (merge-pathnames pathname (base-directory object))))
-
 
 (defgeneric enabledp (object)
   (:documentation
@@ -160,7 +155,6 @@
   (:method (object)
     (inhibit-subscription object)))
 
-
 (defgeneric preference-parent (object)
   (:documentation
    "Return a value suitable for checking if OBJECT has no specific
@@ -213,7 +207,6 @@
 (defgeneric short-description (object)
   (:documentation "Return a short string describing OBJECT."))
 
-
 (defgeneric provided-releases (object)
   (:documentation "Return a list of releases provided by OBJECT."))
 
@@ -246,7 +239,6 @@
    "Return a release with the given NAME in DIST, or NIL if no release
    is found."))
 
-
 (defgeneric ensure-system-index-file (dist)
   (:documentation
    "Return the pathname for the system index file of DIST, fetching it
@@ -267,7 +259,6 @@
    "Return the pathname for the release cdb file of DIST, creating it
    if necessary."))
 
-
 (defgeneric initialize-release-index (dist)
   (:documentation
    "Initialize the release index of DIST."))
@@ -275,7 +266,6 @@
 (defgeneric initialize-system-index (dist)
   (:documentation
    "Initialize the system index of DIST."))
-
 
 (defgeneric local-archive-file (release)
   (:documentation
@@ -292,7 +282,6 @@
    "Check the local archive file of RELEASE for validity, including
    size and signature checks. Signals errors in the case of invalid files."))
 
-
 (defgeneric archive-url (release)
   (:documentation
    "Return the full URL for fetching the archive file of RELEASE."))
@@ -301,9 +290,6 @@
   (:documentation
    "Return the path to the installed ASDF system file for OBJECT, or
    NIL if there is no installed system file."))
-
-
-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro destructure-line (lambda-list line &body body)
@@ -360,10 +346,9 @@
               (push keyword initargs)))))
       initargs)))
 
-;;;
-;;; A few generic things
-;;;
-
+;;
+;; A few generic things
+;;
 (defmethod dist ((name symbol))
   (dist (string name)))
 
@@ -382,12 +367,11 @@
 (defmethod system ((name string))
   (find-system (string-downcase name)))
 
-;;;
-;;; Dists
-;;;
-;;; A dist is a set of releases.
-;;;
-
+;;
+;; Dists
+;;
+;; A dist is a set of releases.
+;;
 (defclass dist ()
   ((base-directory
     :initarg :base-directory
@@ -493,7 +477,6 @@
         (loop for system being each hash-value of (release-index dist)
               collect system)))
 
-
 (defun dist-name-pathname (name)
   "Return the pathname that would be used for an installed dist with
 the given NAME."
@@ -541,7 +524,6 @@ the given NAME."
     (ql-impl-util:delete-directory-tree (base-directory dist))
     t))
 
-
 (defun make-release-from-line (line dist)
   (let ((release
          (make-line-instance line 'release
@@ -566,7 +548,6 @@ the given NAME."
           (when line
             (setf (gethash release-name index)
                   (make-release-from-line line dist)))))))
-
 
 (defparameter *dist-enumeration-functions*
   '(standard-dist-enumeration-function)
@@ -598,7 +579,6 @@ the given NAME."
                               :name (name object)
                               :type "txt")))
 
-
 (defclass preference-mixin () ()
   (:documentation
    "Instances of this class have a special location for their
@@ -629,10 +609,9 @@ the given NAME."
 (defmethod subscribedp ((dist dist))
   (distinfo-subscription-url dist))
 
-;;;
-;;; Releases
-;;;
-
+;;
+;; Releases
+;;
 (defclass release (preference-mixin)
   ((project-name
     :initarg :project-name
@@ -755,7 +734,6 @@ the given NAME."
            (go :retry))))
     pathname))
 
-
 (defmethod base-directory ((release release))
   (relative-to
    (dist release)
@@ -813,7 +791,6 @@ the given NAME."
     (ql-impl-util:delete-directory-tree (base-directory release))
     t))
 
-
 (defun call-for-each-index-entry (file fun)
   (labels ((blank-char-p (char)
              (member char '(#\Space #\Tab)))
@@ -834,13 +811,11 @@ the given NAME."
   (setf (slot-value dist 'release-index)
         (make-hash-table :test 'equal)))
 
-
-;;;
-;;; Systems
-;;;
-;;; A "system" in the defsystem sense.
-;;;
-
+;;
+;; Systems
+;;
+;; A "system" in the defsystem sense.
+;;
 (defclass system (preference-mixin)
   ((name
     :initarg :name
@@ -994,7 +969,6 @@ the given NAME."
 (defmethod install ((system system))
   (ensure-installed (release system)))
 
-
 (defmethod install-metadata-file ((system system))
   (relative-to (dist system)
                (make-pathname :name (system-file-name system)
@@ -1043,7 +1017,6 @@ FUN."
   "See CALL-WITH-CONSISTENT-DISTS."
   `(call-with-consistent-dists (lambda () ,@body)))
 
-
 (defgeneric dependency-tree (system)
   (:method ((symbol symbol))
     (dependency-tree (string-downcase symbol)))
@@ -1067,7 +1040,6 @@ FUN."
                         appending (provided-releases dist))))
     (sort releases #'string< :key #'name)))
 
-
 (defgeneric system-apropos-list (term)
   (:method ((term symbol))
     (system-apropos-list (symbol-name term)))
@@ -1086,11 +1058,9 @@ FUN."
          (system-apropos-list term))
     (values)))
 
-
-;;;
-;;; Clean up things
-;;;
-
+;;
+;; Clean up things
+;;
 (defgeneric clean (object)
   (:documentation "Remove any unneeded files or directories related to
   OBJECT."))
@@ -1119,11 +1089,9 @@ FUN."
     (map nil 'delete-file garbage-archives)
     (map nil 'delete-directory-tree garbage-directories)))
 
-
-;;;
-;;; Available versions
-;;;
-
+;;
+;; Available versions
+;;
 (defmethod available-versions ((dist dist))
   (let ((temp (qmerge "tmp/dist-versions.txt"))
         (versions '())
@@ -1143,11 +1111,9 @@ FUN."
                 (setf versions (acons version url versions)))))
       versions)))
 
-
-;;;
-;;; User interface bits to re-export from QL
-;;;
-
+;;
+;; User interface bits to re-export from QL
+;;
 (define-condition unknown-dist (error)
   ((name
     :initarg :name

@@ -1,11 +1,10 @@
-;;;
-;;; A simple HTTP client
-;;;
+;;
+;; A simple HTTP client
+;;
 
 (in-package #:ql-http)
 
-;;; Octet data
-
+;; Octet data
 (deftype octet ()
   '(unsigned-byte 8))
 
@@ -17,8 +16,7 @@
   (make-array (length octets) :element-type 'octet
               :initial-contents octets))
 
-;;; ASCII characters as integers
-
+;; ASCII characters as integers
 (defun acode (char)
   (cond ((eql char :cr)
          13)
@@ -86,8 +84,7 @@
                         ,@body)))
                  cases))))
 
-;;; Pattern matching (for finding headers)
-
+;; Pattern matching (for finding headers)
 (defclass matcher ()
   ((pattern
     :initarg :pattern
@@ -146,12 +143,11 @@
                                       (mapcar 'acode codes))))
 
 
-;;; "Connection Buffers" are a kind of callback-driven,
-;;; pattern-matching chunky stream. Callbacks can be called for a
-;;; certain number of octets or until one or more patterns are seen in
-;;; the input. cbufs automatically refill themselves from a
-;;; connection as needed.
-
+;; "Connection Buffers" are a kind of callback-driven,
+;; pattern-matching chunky stream. Callbacks can be called for a
+;; certain number of octets or until one or more patterns are seen in
+;; the input. cbufs automatically refill themselves from a
+;; connection as needed.
 (defvar *cbuf-buffer-size* 8192)
 
 (define-condition end-of-data (error) ())
@@ -281,9 +277,7 @@
 (defun skip-until-matching (matcher cbuf)
   (call-until-matching matcher 'ignore-data cbuf))
 
-
-;;; Creating HTTP requests as octet buffers
-
+;; Creating HTTP requests as octet buffers
 (defclass octet-sink ()
   ((storage
     :initarg :storage
@@ -384,8 +378,7 @@ information."
     (sink-buffer sink)))
 
 
-;;; HTTP headers
-
+;; HTTP headers
 (defclass header ()
   ((data
     :initarg :data
@@ -587,9 +580,7 @@ the indexes in the header accordingly."
            (error "No header found in response"))
          (setf state (funcall state (aref vector pos))))))))
 
-
-;;; HTTP URL parsing
-
+;; HTTP URL parsing
 (defclass url ()
   ((scheme
     :initarg :scheme
@@ -710,8 +701,7 @@ the indexes in the header accordingly."
                            (path url2))))
 
 
-;;; Requesting an URL and saving it to a file
-
+;; Requesting an URL and saving it to a file
 (defparameter *maximum-redirects* 10)
 (defvar *default-url-defaults* (url "http://src.quicklisp.org/"))
 

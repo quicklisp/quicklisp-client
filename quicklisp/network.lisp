@@ -1,7 +1,6 @@
-;;;
-;;; Low-level networking implementations
-;;;
-
+;;
+;; Low-level networking implementations
+;;
 (in-package #:ql-network)
 
 (definterface host-address (host)
@@ -15,7 +14,7 @@
   given PORT.")
   (:implementation t
     (declare (ignore host port))
-    (error "Sorry, quicklisp in implementation ~S is not supported yet."
+    (error "Sorry, Quicklisp in implementation ~S is not supported yet."
            (lisp-implementation-type)))
   (:implementation allegro
     (ql-allegro:make-socket :remote-host host

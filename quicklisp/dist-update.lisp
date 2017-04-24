@@ -1,5 +1,4 @@
 ;;;; dist-update.lisp
-
 (in-package #:ql-dist)
 
 (defgeneric available-update (dist)

@@ -1,7 +1,6 @@
-;;;
-;;; A text progress bar
-;;;
-
+;;
+;; Text progress bar
+;;
 (in-package #:ql-progress)
 
 (defclass progress-bar ()
@@ -107,8 +106,6 @@
 (defun kb/sec (progress-bar)
   (/ (units-per-second progress-bar) 1024))
 
-
-
 (defparameter *uncertain-progress-chars* "?")
 
 (defclass uncertain-size-progress-bar (progress-bar)
@@ -129,8 +126,7 @@
 
 (defmethod progress-character ((progress-bar uncertain-size-progress-bar))
   (let ((index (progress-char-index progress-bar)))
-    (prog1
-        (char *uncertain-progress-chars* index)
+    (prog1 (char *uncertain-progress-chars* index)
       (setf (progress-char-index progress-bar)
             (mod (1+ index) (length *uncertain-progress-chars*))))))
 
@@ -153,4 +149,3 @@
   (if (or (not total) (zerop total))
       (make-instance 'uncertain-size-progress-bar)
       (make-instance 'progress-bar :total total)))
-

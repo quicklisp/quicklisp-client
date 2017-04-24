@@ -45,10 +45,9 @@
 ;;;; from the input-stream to the output-stream.
 ;;;;
 
-;;;
-;;; Conditions
-;;;
-
+;;
+;; Conditions
+;;
 (define-condition decompression-error (simple-error)
   ())
 
@@ -85,10 +84,9 @@
                  (simple-condition-format-control c)
                  (simple-condition-format-arguments c)))))))
 
-;;;
-;;; Adler-32 Checksums
-;;;
-
+;;
+;; Adler-32 Checksums
+;;
 (defconstant +adler-32-start-value+ 1
   "Start value for Adler-32 checksums as per RFC 1950.")
 
@@ -114,10 +112,9 @@
             s2 (mod (+ s2 s1) +adler-32-base+)))
     (dpb s2 (byte 16 16) s1)))
 
-;;;
-;;; CRC-32 Checksums
-;;;
-
+;;
+;; CRC-32 Checksums
+;;
 (defconstant +crc-32-start-value+ 0
   "Start value for CRC-32 checksums as per RFC 1952.")
 
@@ -186,10 +183,9 @@
                                                       (sys:int32>> cur 8))))))
     (ldb (byte 32 0) (sys:int32-to-integer (sys:int32-lognot cur)))))
 
-;;;
-;;; Helper Data Structures: Sliding Window Stream
-;;;
-
+;;
+;; Helper Data Structures: Sliding Window Stream
+;;
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +sliding-window-size+ 32768
     "Size of sliding window for RFC 1951 Deflate compression scheme."))
@@ -261,10 +257,9 @@
        stream
        (aref buffer (mod (+ start i) +sliding-window-size+))))))
 
-;;;
-;;; Helper Data Structures: Bit-wise Input Stream
-;;;
-
+;;
+;; Helper Data Structures: Bit-wise Input Stream
+;;
 (defstruct bit-stream
   (stream nil :type stream :read-only t)
   (next-byte 0 :type fixnum)
@@ -326,22 +321,20 @@
     (dotimes (i len)
       (sliding-window-stream-write-byte out-stream (bit-stream-get-byte stream)))))
 
-;;;
-;;; Huffman Coding
-;;;
-
-;;; A decode-tree struct contains all information necessary to decode
-;;; the given canonical huffman code.  Note that length-count contains
-;;; the number of codes with a given length for each length, whereas
-;;; the code-symbols array contains the symbols corresponding to the
-;;; codes in canoical order of the codes.
-;;;
-;;; Decoding then uses this information and the principles underlying
-;;; canonical huffman codes to determine whether the currently
-;;; collected word falls between the first code and the last code for
-;;; the current length, and if so, uses the offset to determine the
-;;; code's symbol.  Otherwise more bits are needed.
-
+;;
+;; Huffman Coding
+;;
+;; A decode-tree struct contains all information necessary to decode
+;; the given canonical huffman code.  Note that length-count contains
+;; the number of codes with a given length for each length, whereas
+;; the code-symbols array contains the symbols corresponding to the
+;; codes in canoical order of the codes.
+;;
+;; Decoding then uses this information and the principles underlying
+;; canonical huffman codes to determine whether the currently
+;; collected word falls between the first code and the last code for
+;; the current length, and if so, uses the offset to determine the
+;; code's symbol.  Otherwise more bits are needed.
 (defstruct decode-tree
   (length-count (make-array 16 :element-type 'fixnum :initial-element 0)
    :type (simple-array fixnum (*)) :read-only t)
@@ -405,10 +398,9 @@ return its decoded symbol, for the huffman code given by decode-tree."
              Incorrect huffman code (~X) in huffman decode!"
             :format-arguments (list code))))
 
-;;;
-;;; Standard Huffman Tables
-;;;
-
+;;
+;; Standard Huffman Tables
+;;
 (defparameter *std-lit-decode-tree* 
   (make-huffman-decode-tree 
    (concatenate 'vector
@@ -421,10 +413,9 @@ return its decoded symbol, for the huffman code given by decode-tree."
   (make-huffman-decode-tree
    (make-sequence 'vector 32 :initial-element 5)))
 
-;;;
-;;; Dynamic Huffman Table Handling
-;;;
-
+;;
+;; Dynamic Huffman Table Handling
+;;
 (defparameter *code-length-entry-order*
   #(16 17 18 0 8 7 9 6 10 5 11 4 12 3 13 2 14 1 15)
   "Order of Code Length Tree Code Lengths.")
@@ -482,10 +473,9 @@ the corresponding decode-trees for literals/length and distance codes."
           (make-huffman-decode-tree (subseq entries 0 (+ hlit 257)))
           (make-huffman-decode-tree (subseq entries (+ hlit 257))))))))
 
-;;;
-;;; Compressed Block Handling
-;;;
-
+;;
+;; Compressed Block Handling
+;;
 (declaim (inline decode-length-entry))
 (defun decode-length-entry (symbol bit-stream)
   "Decode the given length symbol into a proper length specification."
@@ -532,10 +522,9 @@ lit-decode-tree and dist-decode-tree."
                         (read-huffman-code bit-stream dist-decode-tree) bit-stream)))
          (sliding-window-stream-copy-bytes window-stream distance length))))))
 
-;;;
-;;; Block Handling Code
-;;;
-
+;;
+;; Block Handling Code
+;;
 (defun decode-block (bit-stream window-stream)
   "Decompress a block read from bit-stream into window-stream."
   (let* ((finalp (not (zerop (bit-stream-read-bits bit-stream 1))))
@@ -557,10 +546,9 @@ lit-decode-tree and dist-decode-tree."
                 :format-arguments (list type))))
     (not finalp)))
 
-;;;
-;;; ZLIB - RFC 1950 handling
-;;;
-
+;;
+;; ZLIB - RFC 1950 handling
+;;
 (defun parse-zlib-header (input-stream)
   "Parse a ZLIB-style header as per RFC 1950 from the input-stream and
 return the compression-method, compression-level dictionary-id and flags
@@ -590,10 +578,9 @@ and signals a zlib-decompression-error in case of corruption."
 return the Adler-32 checksum contained in the footer as its return value."
   (parse-zlib-checksum input-stream))
 
-;;;
-;;; GZIP - RFC 1952 handling
-;;;
-
+;;
+;; GZIP - RFC 1952 handling
+;;
 (defconstant +gzip-header-id1+ 31
   "GZIP Header Magic Value ID1 as per RFC 1952.")
 
@@ -686,10 +673,9 @@ its return values."
              (* (read-byte input-stream) 256 256)
              (* (read-byte input-stream) 256 256 256))))
 
-;;;
-;;; Main Entry Points
-;;;
-
+;;
+;; Main Entry Points
+;;
 (defun inflate-stream (input-stream output-stream &key checksum)
   "Inflate the RFC 1951 data from the given input stream into the
 given output stream, which are required to have an element-type

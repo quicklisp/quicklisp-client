@@ -1,4 +1,4 @@
-;;;; impl-util.lisp
+;; impl-util.lisp
 
 (in-package #:ql-impl-util)
 
@@ -77,8 +77,7 @@
   (:implementation cmucl
     ".cmucl-init.lisp")
   (:implementation scl
-    ".scl-init.lisp")
-  )
+    ".scl-init.lisp"))
 
 (defun init-file-name-for (&optional implementation-designator)
   (let* ((class-name (find-symbol (string-upcase implementation-designator)
@@ -102,7 +101,7 @@
            `(merge-pathnames ,enough (user-homedir-pathname))))))
 
 (defun write-init-forms (stream &key (indentation 0))
-  (format stream "~%~v@T;;; The following lines added by ql:add-to-init-file:~%"
+  (format stream "~%~v@T;; The following lines added by ql:add-to-init-file:~%"
           indentation)
   (format stream "~v@T#-quicklisp~%" indentation)
   (let ((*print-case* :downcase))
@@ -141,12 +140,9 @@ quicklisp at CL startup."
         (write-init-forms stream)))
     init-file))
 
-
-
-;;;
-;;; Native namestrings.
-;;;
-
+;;
+;; Native namestrings.
+;;
 (definterface native-namestring (pathname)
   (:documentation "In Clozure CL, #\\.s in pathname-names are escaped
   in namestrings with #\\> on Windows and #\\\\ elsewhere. This can
@@ -161,11 +157,9 @@ quicklisp at CL startup."
   (:implementation sbcl
     (ql-sbcl:native-namestring pathname)))
 
-
-;;;
-;;; Directory write date
-;;;
-
+;;
+;; Directory write date
+;;
 (definterface directory-write-date (pathname)
   (:documentation "Return the write-date of the directory designated
   by PATHNAME as a universal time, like file-write-date.")
@@ -174,11 +168,9 @@ quicklisp at CL startup."
   (:implementation clisp
     (nth-value 2 (ql-clisp:probe-pathname pathname))))
 
-
-;;;
-;;; Deleting a directory tree
-;;;
-
+;;
+;; Deleting a directory tree
+;;
 (defvar *wild-entry*
   (make-pathname :name :wild :type :wild :version :wild))
 
@@ -219,7 +211,7 @@ quicklisp at CL startup."
      (directory (merge-pathnames *wild-relative* directory)
                 #+clasp :resolve-symlinks #+clasp nil)))
   (:implementation clisp
-    ;; :full gives pathnames as well as truenames, BUT: it returns a
+    ;; :full gives pathnames as well as truenames, BUT it returns a
     ;; singleton pathname, not a list, on dead symlinks.
     (remove nil
             (mapcar (lambda (entry) (and (listp entry) (first entry)))

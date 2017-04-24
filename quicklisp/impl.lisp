@@ -37,7 +37,6 @@
               (every 'feature-expression-passes-p (rest expression)))))
           (t (error "Unrecognized feature expression -- ~S" expression)))))
 
-
 (defmacro define-implementation-package (feature package-name &rest options)
   (let* ((output-options '((:use)
                            (:export #:lisp)))
@@ -119,15 +118,11 @@
            ,@(when qualifier (list qualifier))
          ,(list* `(,implementation-arg ,for) lambda-list) ,@body))))
 
-
-;;; Bootstrap implementations
-
+;; Bootstrap implementations for different implementations
 (defvar *implementation* nil)
 (defclass lisp () ())
 
-
-;;; Allegro Common Lisp
-
+;; Allegro Common Lisp
 (define-implementation-package :allegro #:ql-allegro
   (:documentation
    "Allegro Common Lisp - http://www.franz.com/products/allegrocl/")
@@ -141,8 +136,7 @@
                   #:read-vector))
 
 
-;;; Armed Bear Common Lisp
-
+;; Armed Bear Common Lisp
 (define-implementation-package :abcl #:ql-abcl
   (:documentation
    "Armed Bear Common Lisp - http://common-lisp.net/project/armedbear/")
@@ -151,8 +145,7 @@
                   #:make-socket
                   #:get-socket-stream))
 
-;;; Clozure CL
-
+;; Clozure CL
 (define-implementation-package :ccl #:ql-ccl
   (:documentation
    "Clozure Common Lisp - http://www.clozure.com/clozurecl.html")
@@ -162,8 +155,7 @@
                   #:make-socket
                   #:native-translated-namestring))
 
-;;; CLASP
-
+;; CLASP
 (define-implementation-package :clasp #:ql-clasp
   (:documentation "CLASP - http://github.com/drmeister/clasp")
   (:class clasp)
@@ -180,9 +172,7 @@
                   #:socket-connect
                   #:socket-make-stream))
 
-
-;;; GNU CLISP
-
+;; GNU CLISP
 (define-implementation-package :clisp #:ql-clisp
   (:documentation "GNU CLISP - http://clisp.cons.org/")
   (:class clisp)
@@ -195,9 +185,7 @@
                   #:probe-pathname
                   #:read-byte-sequence))
 
-
-;;; CMUCL
-
+;; CMUCL
 (define-implementation-package :cmu #:ql-cmucl
   (:documentation "CMU Common Lisp - http://www.cons.org/cmucl/")
   (:class cmucl)
@@ -211,9 +199,7 @@
 
 (defvar ql-cmucl:*gc-verbose*)
 
-
-;;; Scieneer CL
-
+;; Scieneer CL
 (define-implementation-package :scl #:ql-scl
   (:documentation "Scieneer Common Lisp - http://www.scieneer.com/scl/")
   (:class scl)
@@ -225,9 +211,7 @@
                   #:connect-to-inet-socket
                   #:unix-namestring))
 
-
-;;; LispWorks
-
+;; LispWorks
 (define-implementation-package :lispworks #:ql-lispworks
   (:documentation "LispWorks - http://www.lispworks.com/")
   (:class lispworks)
@@ -240,9 +224,7 @@
                   #:open-tcp-stream
                   #:get-host-entry))
 
-
-;;; ECL
-
+;; ECL
 (define-implementation-package :ecl #:ql-ecl
   (:documentation "ECL - http://ecls.sourceforge.net/")
   (:class ecl)
@@ -259,8 +241,7 @@
                   #:socket-connect
                   #:socket-make-stream))
 
-;;; MKCL
-
+;; MKCL
 (define-implementation-package :mkcl #:ql-mkcl
   (:documentation "ManKai Common Lisp - http://common-lisp.net/project/mkcl/")
   (:class mkcl)
@@ -277,9 +258,7 @@
                   #:socket-connect
                   #:socket-make-stream))
 
-
-;;; SBCL
-
+;; SBCL
 (define-implementation-package :sbcl #:ql-sbcl
   (:class sbcl)
   (:documentation
