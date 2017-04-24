@@ -1,7 +1,6 @@
-;;;
-;;; Low-level networking implementations
-;;;
-
+;;
+;; Low-level networking implementations
+;;
 (in-package #:ql-network)
 
 (definterface host-address (host)

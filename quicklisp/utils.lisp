@@ -1,4 +1,4 @@
-;;;; utils.lisp
+;; utils.lisp
 
 (in-package #:ql-util)
 

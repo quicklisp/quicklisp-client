@@ -1,4 +1,4 @@
-;;;; quicklisp.asd
+;; quicklisp.asd
 
 (defpackage #:ql-info
   (:export #:*version*))

@@ -1,4 +1,4 @@
-;;;; fetch-gzipped.lisp
+;; fetch-gzipped.lisp
 
 (in-package #:quicklisp-client)
 
