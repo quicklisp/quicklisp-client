@@ -20,6 +20,18 @@
 (defun maybe-silence (silent stream)
   (or (and silent (make-broadcast-stream)) stream))
 
+(defun use-only-quicklisp-systems ()
+  (asdf:initialize-source-registry
+   '(:source-registry :ignore-inherited-configuration))
+  (asdf:map-systems 'asdf:clear-system)
+  t)
+
+(defun who-depends-on (system-name)
+  "Return a list of names of systems that depend on SYSTEM-NAME."
+  (loop for system in (provided-systems t)
+        when (member system-name (required-systems system) :test 'string=)
+        collect (name system)))
+
 (defgeneric quickload (systems &key verbose silent prompt explain &allow-other-keys)
   (:documentation
    "Load SYSTEMS the quicklisp way. SYSTEMS is a designator for a list
