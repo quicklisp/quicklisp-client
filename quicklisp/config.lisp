@@ -19,6 +19,22 @@
                      :directory (list* :relative directory-parts))
       base)))
 
+(defun config-paths (&optional (path-string "**/*"))
+  "Return all config paths that match PATH-STRING."
+  (let* ((base (qmerge "config/"))
+         (pathname-to-match (merge-pathnames
+                             (merge-pathnames
+                              (make-pathname :type "txt")
+                              path-string)
+                             base))
+         (pathnames (directory pathname-to-match)))
+    (mapcar (lambda (p)
+              (let ((enough-name (enough-namestring p base)))
+                ;; Strip off the .txt
+                (namestring (make-pathname :directory (pathname-directory enough-name)
+                                           :name (pathname-name enough-name)))))
+            pathnames)))
+
 (defun config-value (path)
   (let ((file (config-value-file-pathname path)))
     (with-open-file (stream file :if-does-not-exist nil)

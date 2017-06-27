@@ -31,7 +31,8 @@
   (:documentation
    "Getting and setting persistent configuration values.")
   (:use #:cl #:ql-util #:ql-setup)
-  (:export #:config-value))
+  (:export #:config-value
+           #:config-paths))
 
 (defpackage #:ql-impl
   (:documentation
