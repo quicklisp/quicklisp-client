@@ -16,7 +16,9 @@
            #:file-size
            #:safely-read
            #:safely-read-file
-           #:make-versions-url))
+           #:make-versions-url
+           #:random-pathname-string
+           #:temp-output-file))
 
 (defpackage #:ql-setup
   (:documentation
@@ -134,6 +136,30 @@
            #:map-cdb
            #:convert-index-file))
 
+(defpackage #:ql-sha
+  (:documentation
+   "Compute SHA digests. Used for verification.")
+  (:use #:cl)
+  (:export #:file-sha
+           #:file-sha-string
+           #:sha1
+           #:sha256
+           #:sha512)
+  (:export #:update-sha-from-file
+           #:update-sha
+           #:finish-sha))
+
+(defpackage #:ql-openpgp
+  (:documentation
+   "Verify OpenPGP signatures.")
+  (:use #:cl
+        #:ql-sha
+        #:ql-util)
+  (:export #:load-signature
+           #:verify-signature
+           #:find-key
+           #:key-id-string))
+
 (defpackage #:ql-dist
   (:documentation
    "Generic functions, variables, and classes for interacting with the
@@ -144,7 +170,8 @@
         #:ql-http
         #:ql-setup
         #:ql-gunzipper
-        #:ql-minitar)
+        #:ql-minitar
+        #:ql-sha)
   (:intern #:dist-version
            #:dist-url)
   (:import-from #:ql-impl-util

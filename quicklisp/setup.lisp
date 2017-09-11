@@ -197,7 +197,7 @@ dependencies too if possible."
     name))
 
 (defvar *initial-dist-url*
-  "http://beta.quicklisp.org/dist/quicklisp.txt")
+  "http://release.quicklisp.org/dist/quicklisp.txt")
 
 (defun dists-initialized-p ()
   (not (not (ignore-errors (truename (qmerge "dists/"))))))

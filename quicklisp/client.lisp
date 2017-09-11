@@ -75,7 +75,7 @@
   (available-versions (find-dist-or-lose name)))
 
 (defun help ()
-  "For help with Quicklisp, see http://www.quicklisp.org/beta/")
+  "For help with Quicklisp, see https://www.quicklisp.org/")
 
 (defun uninstall (system-name)
   (let ((system (find-system system-name)))

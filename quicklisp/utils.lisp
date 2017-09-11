@@ -122,3 +122,23 @@ http://foo/bar-versions.txt."
                    (subseq url 0 suffix-pos)
                    "-versions"
                    extension))))
+
+(defvar *random-pathname-alphabet*
+  (concatenate 'string
+               "abcdefghijklmnopqrstuvwxyz"
+               "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+               "0123456789"))
+
+(defun random-pathname-string (&optional (length 8))
+  (let ((string (make-string length)))
+    (map-into string (lambda () (char *random-pathname-alphabet*
+                                      (random (length *random-pathname-alphabet*)))))))
+
+(defun temp-output-file (template-pathname)
+  (let* ((temp-string (random-pathname-string))
+         (temp-name (format nil "~A-~A"
+                            (pathname-name template-pathname)
+                            temp-string)))
+    (merge-pathnames (make-pathname :name temp-name
+                                    :type (pathname-type template-pathname))
+                     (ql-setup:qmerge "tmp/"))))

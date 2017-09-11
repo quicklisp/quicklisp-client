@@ -297,6 +297,10 @@
   (:documentation
    "Return the full URL for fetching the archive file of RELEASE."))
 
+(defgeneric archive-digest (release)
+  (:documentation
+   "Return the cryptographic digest of RELEASE as a string."))
+
 (defgeneric installed-asdf-system-file (object)
   (:documentation
    "Return the path to the installed ASDF system file for OBJECT, or
@@ -452,11 +456,33 @@
   (setf (available-versions-url dist)
         (make-versions-url (distinfo-subscription-url dist))))
 
+(defun fetch-signed-index-file (url target)
+  (let ((signature-url (format nil "~A.asc" url))
+        (temp-file (temp-output-file "index.txt"))
+        (temp-signature-file (temp-output-file "signature.asc")))
+    (unwind-protect
+         (progn
+           (fetch signature-url temp-signature-file)
+           (fetch url temp-file)
+           (let* ((signature (ql-openpgp:load-signature temp-signature-file))
+                  (id (ql-openpgp:key-id-string signature))
+                  (key (ql-openpgp:find-key id)))
+             (unless key
+               (error "No key available for id ~S" id))
+             (let ((result (ql-openpgp:verify-signature temp-file signature key)))
+               (unless result
+                 (error "Signature failed for index file ~A"
+                        target))
+               (format t "~&; Signature check result: ~A~%" result)))
+           (rename-file temp-file target)
+           (delete-file temp-signature-file))
+      (delete-file-if-exists temp-file)
+      (delete-file-if-exists temp-signature-file))))
 
 (defmethod ensure-system-index-file ((dist dist))
   (let ((pathname (relative-to dist "systems.txt")))
     (or (probe-file pathname)
-        (nth-value 1 (fetch (system-index-url dist) pathname)))))
+        (fetch-signed-index-file (system-index-url dist) pathname))))
 
 (defmethod ensure-system-cdb-file ((dist dist))
   (let* ((system-file (ensure-system-index-file dist))
@@ -469,7 +495,7 @@
 (defmethod ensure-release-index-file ((dist dist))
   (let ((pathname (relative-to dist "releases.txt")))
     (or (probe-file pathname)
-        (nth-value 1 (fetch (release-index-url dist) pathname)))))
+        (fetch-signed-index-file (release-index-url dist) pathname))))
 
 (defmethod ensure-release-cdb-file ((dist dist))
   (let* ((release-file (ensure-release-index-file dist))
@@ -717,6 +743,15 @@ the given NAME."
              (badly-sized-local-archive-expected-size condition)
              (badly-sized-local-archive-actual-size condition)))))
 
+(define-condition file-digest-mismatch (invalid-local-archive)
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for ~S does not have the expected ~
+                     cryptographic digest"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))))))
+
 (defmethod check-local-archive-file ((release release))
   (let ((file (local-archive-file release)))
     (unless (probe-file file)
@@ -730,7 +765,14 @@ the given NAME."
                :file file
                :release release
                :actual-size actual-size
-               :expected-size expected-size)))))
+               :expected-size expected-size)))
+    (let ((expected-digest (archive-digest release))
+          (actual-digest (file-sha-string 'sha256 file)))
+      (unless (equalp expected-digest actual-digest)
+        (error 'file-digest-mismatch
+               :file file
+               :release release)))
+    :good-archive))
 
 (defmethod local-archive-file ((release release))
   (relative-to (dist release)
@@ -828,6 +870,16 @@ the given NAME."
             while line do
             (unless (ignorable line)
               (funcall fun line))))))
+
+
+(defmethod archive-digest ((release release))
+  (let ((entry (cdb-lookup (dist release) (name release)
+                           "archive-digests.cdb")))
+    (unless entry
+      (error "No digest indexed for ~S. That's pretty weird!" release))
+    (let ((digest-position (position #\Space entry)))
+      (subseq entry (1+ digest-position)))))
+
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'release-index)))
   (declare (ignore class))
