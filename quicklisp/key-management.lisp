@@ -5,7 +5,7 @@
 (defun all-key-files ()
   (let* ((key-directory (ql-setup:qmerge "openpgp-keys/"))
          (wild (make-pathname :name :wild
-                              :type "key"
+                              :type "asc"
                               :version :wild
                               :defaults key-directory)))
     (directory wild)))
