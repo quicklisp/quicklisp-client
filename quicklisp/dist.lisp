@@ -25,6 +25,10 @@
   (:documentation
    "Return the URL for the available versions data file of OBJECT."))
 
+(defgeneric digest-index-url (object)
+  (:documentation
+   "Return the URL for the index of digests of releases for OBJECT."))
+
 (defgeneric release (object)
   (:documentation
    "Return the release of OBJECT."))
@@ -446,6 +450,14 @@
 (defmethod print-object ((dist dist) stream)
   (print-unreadable-object (dist stream :type t)
     (write-string (short-description dist) stream)))
+
+(defmethod digest-index-url ((dist dist))
+  (let ((base (canonical-distinfo-url dist)))
+    ;; Convert something like "http://foo/bar/baz" to "http://foo/bar/digests.txt"
+    (let ((final-slash (position #\/ base :from-end t)))
+      (unless final-slash
+        (error "Can't process URL -- ~S" base))
+      (format nil "~A/digests.txt" (subseq base 0 final-slash)))))
 
 (defun cdb-lookup (dist key cdb)
   (ql-cdb:lookup key

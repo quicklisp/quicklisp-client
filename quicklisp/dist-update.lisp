@@ -156,6 +156,9 @@
           (copy-file temp-file (relative-to new-dist "distinfo.txt"))
           (ensure-release-index-file new-dist)
           (ensure-system-index-file new-dist)
+          (let ((output (relative-to new-dist "digests.txt")))
+            (fetch-openpgp-checked (digest-index-url new-dist) output)
+            (ql-cdb:convert-index-file output))
           (enable new-dist)
           (setf (preference new-dist) (get-universal-time))
           (when old-dist
