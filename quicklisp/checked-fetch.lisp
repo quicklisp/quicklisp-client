@@ -7,7 +7,11 @@
 (define-condition signature-verification-error (verification-error) ())
 
 (defun openpgp-signature-url (url)
-  (format nil "~A.asc" url))
+  (etypecase url
+    (string
+     (format nil "~A.asc" url))
+    (url
+     (format nil "~A.asc" (urlstring url)))))
 
 (defun fetch-digest-checked (url output expected-digest &key quietly)
   "Fetch the data at URL and save to the file OUTPUT. The
