@@ -456,33 +456,10 @@
   (setf (available-versions-url dist)
         (make-versions-url (distinfo-subscription-url dist))))
 
-(defun fetch-signed-index-file (url target)
-  (let ((signature-url (format nil "~A.asc" url))
-        (temp-file (temp-output-file "index.txt"))
-        (temp-signature-file (temp-output-file "signature.asc")))
-    (unwind-protect
-         (progn
-           (fetch signature-url temp-signature-file)
-           (fetch url temp-file)
-           (let* ((signature (ql-openpgp:load-signature temp-signature-file))
-                  (id (ql-openpgp:key-id-string signature))
-                  (key (ql-openpgp:find-key id)))
-             (unless key
-               (error "No key available for id ~S" id))
-             (let ((result (ql-openpgp:verify-signature temp-file signature key)))
-               (unless result
-                 (error "Signature failed for index file ~A"
-                        target))
-               (format t "~&; Signature check result: ~A~%" result)))
-           (rename-file temp-file target)
-           (delete-file temp-signature-file))
-      (delete-file-if-exists temp-file)
-      (delete-file-if-exists temp-signature-file))))
-
 (defmethod ensure-system-index-file ((dist dist))
   (let ((pathname (relative-to dist "systems.txt")))
     (or (probe-file pathname)
-        (fetch-signed-index-file (system-index-url dist) pathname))))
+        (fetch-openpgp-checked (system-index-url dist) pathname))))
 
 (defmethod ensure-system-cdb-file ((dist dist))
   (let* ((system-file (ensure-system-index-file dist))
@@ -495,7 +472,7 @@
 (defmethod ensure-release-index-file ((dist dist))
   (let ((pathname (relative-to dist "releases.txt")))
     (or (probe-file pathname)
-        (fetch-signed-index-file (release-index-url dist) pathname))))
+        (fetch-openpgp-checked (release-index-url dist) pathname))))
 
 (defmethod ensure-release-cdb-file ((dist dist))
   (let* ((release-file (ensure-release-index-file dist))
@@ -752,6 +729,21 @@ the given NAME."
              (file-namestring (invalid-local-archive-file condition))
              (name (invalid-local-archive-release condition))))))
 
+(defmethod archive-digest ((release release))
+  (let* ((dist (dist release))
+         (index (relative-to dist "digests.txt"))
+         (cdb (relative-to dist "digests.cdb"))
+         (key (format nil "release/~A" (name release))))
+    (unless (probe-file index)
+      (error "Digest index file is missing"))
+    (unless (probe-file cdb)
+      (ql-cdb:convert-index-file index :cdb-file cdb))
+    (let ((value (ql-cdb:lookup key cdb)))
+      (destructuring-bind (k sha256)
+          (split-spaces value)
+        (declare (ignore k))
+        sha256))))
+
 (defmethod check-local-archive-file ((release release))
   (let ((file (local-archive-file release)))
     (unless (probe-file file)
@@ -787,7 +779,9 @@ the given NAME."
        (or (probe-file pathname)
            (progn
              (ensure-directories-exist pathname)
-             (fetch (archive-url release) pathname)))
+             (fetch-digest-checked (archive-url release)
+                                   pathname
+                                   (archive-digest release))))
        (restart-case
            (check-local-archive-file release)
          (delete-and-retry (&optional v)
@@ -870,16 +864,6 @@ the given NAME."
             while line do
             (unless (ignorable line)
               (funcall fun line))))))
-
-
-(defmethod archive-digest ((release release))
-  (let ((entry (cdb-lookup (dist release) (name release)
-                           "archive-digests.cdb")))
-    (unless entry
-      (error "No digest indexed for ~S. That's pretty weird!" release))
-    (let ((digest-position (position #\Space entry)))
-      (subseq entry (1+ digest-position)))))
-
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'release-index)))
   (declare (ignore class))
@@ -1177,23 +1161,23 @@ FUN."
 ;;;
 
 (defmethod available-versions ((dist dist))
-  (let ((temp (qmerge "tmp/dist-versions.txt"))
-        (versions '())
-        (url (available-versions-url dist)))
-    (when url
-      (ensure-directories-exist temp)
-      (delete-file-if-exists temp)
-      (handler-case
-          (fetch url temp)
-        (unexpected-http-status ()
-          (return-from available-versions nil)))
-      (with-open-file (stream temp)
-        (loop for line = (read-line stream nil)
-              while line do
-              (destructuring-bind (version url)
-                  (split-spaces line)
-                (setf versions (acons version url versions)))))
-      versions)))
+  (with-temp-output-file (temp "dist-versions.txt")
+    (let ((versions '())
+          (url (available-versions-url dist)))
+      (when url
+        (ensure-directories-exist temp)
+        (delete-file-if-exists temp)
+        (handler-case
+            (fetch-openpgp-checked url temp)
+          (unexpected-http-status ()
+            (return-from available-versions nil)))
+        (with-open-file (stream temp)
+          (loop for line = (read-line stream nil)
+                while line do
+                  (destructuring-bind (version url)
+                      (split-spaces line)
+                    (setf versions (acons version url versions)))))
+        versions))))
 
 
 ;;;

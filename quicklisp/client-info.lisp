@@ -83,6 +83,12 @@
                      (badly-sized-client-file-expected-size condition)
                      (badly-sized-client-file-actual-size condition)))))
 
+(define-condition sha-mismatched-client-file (invalid-client-file)
+  ()
+  (:report (lambda (condition stream)
+             (format stream "SHA digest mismatch on client file ~A"
+                     (invalid-client-file-file condition)))))
+
 (defun check-client-file-size (file expected-size)
   (let ((actual-size (file-size file)))
     (unless (eql expected-size actual-size)
@@ -99,6 +105,10 @@
    metadata in CLIENT-FILE-INFO.")
   (:method (file client-file-info)
     (check-client-file-size file (size client-file-info))
+    (let ((actual-sha (ql-sha:file-sha-string  'sha256 file ))
+          (expected-sha (sha256 client-file-info)))
+      (unless (equalp expected-sha actual-sha)
+        (error "SHA mismatch on ~A" client-file-info)))
     client-file-info))
 
 ;;; Structuring and loading information about the Quicklisp client
@@ -207,9 +217,8 @@
                                      'client-tar-file-info))))
 
 (defun fetch-client-info (url)
-  (let ((info-file (qmerge "tmp/client-info.sexp")))
-    (delete-file-if-exists info-file)
-    (fetch url info-file :quietly t)
+  (with-temp-output-file (info-file "client-info.sexp")
+    (ql-http:fetch-openpgp-checked url info-file :quietly t)
     (handler-case
         (load-client-info info-file)
       ;; FIXME: So many other things could go wrong here; I think it

@@ -27,6 +27,7 @@
                (:file "sha")
                (:file "openpgp")
                (:file "key-management")
+               (:file "checked-fetch")
                (:file "dist")
                (:file "setup")
                (:file "client")

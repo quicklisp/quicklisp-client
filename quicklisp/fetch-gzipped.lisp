@@ -9,7 +9,7 @@
 (defun fetch-gzipped-version (url file &key quietly)
   (let ((gzipped (gzipped-url url))
         (gzipped-temp (merge-pathnames "gzipped.tmp" file)))
-    (fetch gzipped gzipped-temp :quietly quietly)
+    (fetch-openpgp-checked gzipped gzipped-temp :quietly quietly)
     (gunzip gzipped-temp file)
     (delete-file-if-exists gzipped-temp)
     (probe-file file)))

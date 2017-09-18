@@ -7,6 +7,7 @@
   (:export #:write-line-to-file
            #:without-prompting
            #:press-enter-to-continue
+           #:rename-mundanely
            #:replace-file
            #:copy-file
            #:delete-file-if-exists
@@ -18,7 +19,9 @@
            #:safely-read-file
            #:make-versions-url
            #:random-pathname-string
-           #:temp-output-file))
+           #:temp-output-file
+           #:with-temp-output-file
+           #:with-temp-output-files))
 
 (defpackage #:ql-setup
   (:documentation
@@ -93,10 +96,25 @@
            #:update-progress
            #:finish-display))
 
+(defpackage #:ql-sha
+  (:documentation
+   "Compute SHA digests. Used for verification.")
+  (:use #:cl)
+  (:export #:file-sha
+           #:file-sha-string
+           #:sha1
+           #:sha256
+           #:sha512)
+  (:export #:update-sha-from-file
+           #:update-sha
+           #:finish-sha))
+
 (defpackage #:ql-http
   (:documentation
    "A simple HTTP client.")
-  (:use #:cl #:ql-network #:ql-progress #:ql-config)
+  (:use #:cl
+        #:ql-network #:ql-progress #:ql-config #:ql-util
+        #:ql-sha)
   (:export #:*proxy-url*
            #:fetch
            #:http-fetch
@@ -108,13 +126,17 @@
            #:url
            #:*maximum-redirects*
            #:*default-url-defaults*)
+  (:export #:fetch-digest-checked
+           #:fetch-openpgp-checked)
   (:export #:fetch-error
            #:unexpected-http-status
            #:unexpected-http-status-code
            #:unexpected-http-status-url
            #:too-many-redirects
            #:too-many-redirects-url
-           #:too-many-redirects-count))
+           #:too-many-redirects-count
+           #:digest-check-error
+           #:openpgp-check-error))
 
 (defpackage #:ql-minitar
   (:documentation
@@ -136,18 +158,7 @@
            #:map-cdb
            #:convert-index-file))
 
-(defpackage #:ql-sha
-  (:documentation
-   "Compute SHA digests. Used for verification.")
-  (:use #:cl)
-  (:export #:file-sha
-           #:file-sha-string
-           #:sha1
-           #:sha256
-           #:sha512)
-  (:export #:update-sha-from-file
-           #:update-sha
-           #:finish-sha))
+
 
 (defpackage #:ql-openpgp
   (:documentation

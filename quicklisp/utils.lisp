@@ -25,6 +25,13 @@
   (let ((result (read-line *query-io*)))
     (zerop (length result))))
 
+(defun rename-mundanely (from to)
+  "Renames file FROM to TO, but inhibit's CL:RENAME-FILE's merging behavior."
+  (setf from (merge-pathnames from (make-pathname :type :unspecific
+                                                 :name :unspecific
+                                                 :version :unspecific)))
+  (rename-file from to))
+
 (defun replace-file (from to)
   "Like RENAME-FILE, but deletes TO if it exists, first."
   (when (probe-file to)
@@ -142,3 +149,24 @@ http://foo/bar-versions.txt."
     (merge-pathnames (make-pathname :name temp-name
                                     :type (pathname-type template-pathname))
                      (ql-setup:qmerge "tmp/"))))
+
+(defun call-with-temp-output-file (template-pathname fun)
+  (let ((file (temp-output-file template-pathname)))
+    (ensure-directories-exist file)
+    (unwind-protect
+         (funcall fun file)
+      (delete-file-if-exists file))))
+
+(defmacro with-temp-output-file ((var template-pathname) &body body)
+  `(call-with-temp-output-file ,template-pathname (lambda (,var) ,@body)))
+
+(defmacro with-temp-output-files (bindings &body body)
+  (labels ((expand (bindings body)
+             (let ((binding (first bindings)))
+               (if (rest bindings)
+                   `(with-temp-output-file (,(first binding) ,(second binding))
+                      ,(expand (rest bindings) body))
+                   `(with-temp-output-file (,(first binding) ,(second binding))
+                      ,@body)))))
+    (expand bindings body)))
+

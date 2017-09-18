@@ -30,7 +30,7 @@
       (delete-directory-tree (qmerge "tmp/distinfo-update/")))
     (when url
       (ensure-directories-exist target)
-      (fetch url target :quietly t)
+      (fetch-openpgp-checked url target :quietly t)
       (let ((new (make-dist-from-file target)))
         (setf (base-directory new)
               (make-pathname :name nil
@@ -135,7 +135,7 @@
     (let ((temp-file (qmerge "tmp/install-dist-distinfo.txt")))
       (ensure-directories-exist temp-file)
       (delete-file-if-exists temp-file)
-      (fetch url temp-file)
+      (fetch-openpgp-checked url temp-file)
       (let* ((new-dist (make-dist-from-file temp-file))
              (old-dist (find-dist (name new-dist))))
         (when old-dist

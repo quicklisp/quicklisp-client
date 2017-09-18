@@ -3,9 +3,11 @@
 (in-package #:quicklisp-client)
 
 (defun fetch-client-file-info (client-file-info output-file)
-  (maybe-fetch-gzipped (file-url client-file-info) output-file)
-  (check-client-file output-file client-file-info)
-  (probe-file output-file))
+  (with-temp-output-file (temp "client-info.dat")
+    (maybe-fetch-gzipped (file-url client-file-info) temp)
+    (check-client-file temp client-file-info)
+    (rename-mundanely temp output-file)
+    (probe-file output-file)))
 
 (defun retirement-directory (base)
   (let ((suffix 0))
