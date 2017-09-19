@@ -25,13 +25,6 @@
   (let ((result (read-line *query-io*)))
     (zerop (length result))))
 
-(defun rename-mundanely (from to)
-  "Renames file FROM to TO, but inhibit's CL:RENAME-FILE's merging behavior."
-  (setf from (merge-pathnames from (make-pathname :type :unspecific
-                                                 :name :unspecific
-                                                 :version :unspecific)))
-  (rename-file from to))
-
 (defun replace-file (from to)
   "Like RENAME-FILE, but deletes TO if it exists, first."
   (when (probe-file to)

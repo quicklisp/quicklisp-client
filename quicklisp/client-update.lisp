@@ -6,7 +6,7 @@
   (with-temp-output-file (temp "client-info.dat")
     (maybe-fetch-gzipped (file-url client-file-info) temp)
     (check-client-file temp client-file-info)
-    (rename-mundanely temp output-file)
+    (rename-file temp output-file)
     (probe-file output-file)))
 
 (defun retirement-directory (base)

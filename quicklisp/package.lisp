@@ -7,7 +7,6 @@
   (:export #:write-line-to-file
            #:without-prompting
            #:press-enter-to-continue
-           #:rename-mundanely
            #:replace-file
            #:copy-file
            #:delete-file-if-exists

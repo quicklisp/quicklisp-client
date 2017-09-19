@@ -770,12 +770,6 @@ the given NAME."
                :release release
                :actual-size actual-size
                :expected-size expected-size)))
-    (let ((expected-digest (archive-digest release))
-          (actual-digest (file-sha-string 'sha256 file)))
-      (unless (equalp expected-digest actual-digest)
-        (error 'file-digest-mismatch
-               :file file
-               :release release)))
     :good-archive))
 
 (defmethod local-archive-file ((release release))
@@ -793,7 +787,8 @@ the given NAME."
              (ensure-directories-exist pathname)
              (fetch-digest-checked (archive-url release)
                                    pathname
-                                   (archive-digest release))))
+                                   (archive-digest release)
+                                   :pretty-description release)))
        (restart-case
            (check-local-archive-file release)
          (delete-and-retry (&optional v)
