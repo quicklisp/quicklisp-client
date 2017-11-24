@@ -174,6 +174,21 @@ quicklisp at CL startup."
   (:implementation clisp
     (nth-value 2 (ql-clisp:probe-pathname pathname))))
 
+;;;
+;;; Set file date
+;;;
+
+(definterface set-file-date (pathname access-time modification-time)
+  (:documentation "Set the access and modification time of the file designated
+  by PATHNAME as a unix time (seconds since 1970-01-01).")
+  (:implementation t
+    t)
+  (:implementation allegro
+                   (ql-allegro:utime pathname
+                                     (ql-allegro:unix-to-universal-time access-time)
+                                     (ql-allegro:unix-to-universal-time modification-time)))
+  (:implementation sbcl
+    (ql-sbcl:utime pathname access-time modification-time)))
 
 ;;;
 ;;; Deleting a directory tree
@@ -337,4 +352,3 @@ potentially dead symlinks."
           (if (directoryp entry)
               (push entry directories-to-process)
               (funcall fun entry)))))))
-

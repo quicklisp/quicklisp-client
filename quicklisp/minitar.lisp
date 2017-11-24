@@ -84,6 +84,9 @@ value it specifies as multiple values."
 (defun payload-size (header)
   (values (parse-integer (block-asciiz-string header 124 12) :radix 8)))
 
+(defun payload-mtime (header)
+  (values (parse-integer (block-asciiz-string header 136 12) :radix 8)))
+
 (defun nth-block (n file)
   (with-open-file (stream file :element-type '(unsigned-byte 8))
     (let ((block (make-block-buffer)))
@@ -149,10 +152,12 @@ value it specifies as multiple values."
                               (full-path block)))
                 (full-path (merge-pathnames tar-path directory))
                 (payload-size (payload-size block))
+                (payload-mtime (payload-mtime block))
                 (block-count (ceiling (payload-size block) +block-size+)))
          (case payload-type
            (:file
-            (save-file full-path payload-size stream))
+            (save-file full-path payload-size stream)
+            (ql-impl-util::set-file-date full-path payload-mtime payload-mtime))
            (:directory
             (ensure-directories-exist full-path))
            ((:symlink :global-header)

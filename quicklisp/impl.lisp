@@ -132,8 +132,13 @@
   (:documentation
    "Allegro Common Lisp - http://www.franz.com/products/allegrocl/")
   (:class allegro)
+  (:prep
+   (require :osi))
   (:reexport-from #:socket
                   #:make-socket)
+  (:reexport-from #:excl.osi
+                  #:unix-to-universal-time
+                  #:utime)
   (:reexport-from #:excl
                   #:file-directory-p
                   #:delete-directory
@@ -289,7 +294,8 @@
    (require 'sb-bsd-sockets))
   (:intern #:host-network-address)
   (:reexport-from #:sb-posix
-                  #:rmdir)
+                  #:rmdir
+                  #:utime)
   (:reexport-from #:sb-ext
                   #:compiler-note
                   #:native-namestring)
