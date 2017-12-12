@@ -251,8 +251,13 @@ quicklisp at CL startup."
      (directory (merge-pathnames *wild-entry* directory))
      (directory (merge-pathnames *wild-relative* directory))))
   (:implementation sbcl
-    (directory (merge-pathnames *wild-entry* directory)
-               #+sbcl :resolve-symlinks #+sbcl nil)))
+    (handler-case
+        (directory (merge-pathnames *wild-entry* directory)
+                   #+sbcl :resolve-symlinks #+sbcl nil)
+      (#+sbcl sb-int:c-string-decoding-error #-sbcl t (err)
+        (format t "While scanning directories:~%~a~%~a~%~a" err
+                "Some files need UTF-8 support. Consider setting"
+                "LC_CTYPE=en_US.UTF-8 before invoking SBCL or Emacs")))))
 
 (defimplementation (directory-entries :qualifier :around) (directory)
   ;; Don't return any entries when called with a non-directory
