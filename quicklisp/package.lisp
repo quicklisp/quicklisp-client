@@ -68,6 +68,7 @@
            #:probe-directory
            #:directory-entries
            #:delete-directory-tree
+           #:map-directory-tree
            #:native-namestring
            #:directory-write-date))
 
@@ -96,6 +97,9 @@
   (:use #:cl #:ql-network #:ql-progress #:ql-config)
   (:export #:*proxy-url*
            #:fetch
+           #:http-fetch
+           #:*fetch-scheme-functions*
+           #:scheme
            #:hostname
            #:port
            #:path
@@ -162,6 +166,7 @@
            #:forget-preference)
   ;; Generic
   (:export #:all-dists
+           #:canonical-distinfo-url
            #:enabled-dists
            #:find-dist
            #:find-dist-or-lose
@@ -219,7 +224,7 @@
            #:archive-size
            #:ensure-archive-file
            #:archive-content-sha1
-           #:archive-file-md5
+           #:archive-md5
            #:prefix
            #:local-archive-file
            #:ensure-local-archive-file
@@ -261,6 +266,7 @@
   (:shadow #:find-system
            #:find-release)
   (:export #:bundle
+           #:requested-systems
            #:ensure-system
            #:ensure-release
            #:write-bundle

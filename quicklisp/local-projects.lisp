@@ -39,12 +39,23 @@
   "Return the system index file for the directory PATHNAME."
   (merge-pathnames "system-index.txt" pathname))
 
+(defun matching-directory-files (directory fun)
+  (let ((result '()))
+    (map-directory-tree directory
+                        (lambda (file)
+                          (when (funcall fun file)
+                            (push file result))))
+    result))
+
 (defun local-project-system-files (pathname)
   "Return a list of system files under PATHNAME."
-  (let* ((wild (merge-pathnames "**/*.asd" pathname))
-         (files (sort (directory wild)
+  (let* ((files (matching-directory-files pathname
+                                          (lambda (file)
+                                            (equalp (pathname-type file)
+                                                    "asd")))))
+    (setf files (sort files
                       #'string<
-                      :key #'namestring)))
+                      :key #'namestring))
     (stable-sort files
                  #'<
                  :key (lambda (file)
@@ -53,6 +64,7 @@
 (defun make-system-index (pathname)
   "Create a system index file for all system files under
 PATHNAME. Current format is one native namestring per line."
+  (setf pathname (truename pathname))
   (with-open-file (stream (system-index-file pathname)
                           :direction :output
                           :if-exists :rename-and-delete)
@@ -83,7 +95,10 @@ SYSTEM, return its full pathname."
     (loop for namestring = (read-line stream nil)
           while namestring
           when (string= system (pathname-name namestring))
-          return (truename (merge-pathnames namestring index-file)))))
+          return (or (probe-file (merge-pathnames namestring index-file))
+                     ;; If the indexed .asd file doesn't exist anymore
+                     ;; then regenerate the index and restart the search.
+                     (find-system-in-index system (make-system-index (directory-namestring index-file)))))))
 
 (defun local-projects-searcher (system-name)
   "This function is added to ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*
