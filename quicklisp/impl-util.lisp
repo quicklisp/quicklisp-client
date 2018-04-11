@@ -273,7 +273,7 @@ quicklisp at CL startup."
   (:implementation clasp
     (ql-clasp:rmdir entry))
   (:implementation clisp
-    (ql-clisp:delete-dir entry))
+    (ql-clisp:delete-directory entry))
   (:implementation cmucl
     (ql-cmucl:unix-rmdir (namestring entry)))
   (:implementation scl

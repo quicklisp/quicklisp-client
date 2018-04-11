@@ -189,7 +189,7 @@
   (:reexport-from #:socket
                   #:socket-connect)
   (:reexport-from #:ext
-                  #:delete-dir
+                  #:delete-directory
                   #:rename-directory
                   #:probe-directory
                   #:probe-pathname
