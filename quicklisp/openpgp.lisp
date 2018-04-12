@@ -456,16 +456,19 @@ values are decoded; others signal an error. See RFC4880 section 4.3."
 DEFINE-FIELD) from PSTREAM."
   (funcall (get field 'reader-function 'missing-reader-function) pstream))
 
-(defun read-field-value (field pstream)
+(defun read-field-value (field pstream &key (default nil defaultp))
   "Read and FIELD from PSTREAM and look up and return its symbolic
 value."
   (let* ((raw-value (read-field field pstream))
          (translation (assoc raw-value (get field 'values-alist))))
-    (unless translation
+    (when (and (not translation)
+               (not defaultp))
       (error "Unsupported value ~A for field ~A"
              raw-value
              field))
-    (cdr translation)))
+    (if translation
+        (cdr translation)
+        default)))
 
 (define-field signature-type (:type u8)
   ;; RFC 4880 section 5.2.1
@@ -488,6 +491,7 @@ value."
   (22 . :preferred-compression-algorithms)
   (23 . :key-server-preferences)
   (27 . :key-flags)
+  (28 . :signer-user-id)
   (30 . :features))
 
 (define-field public-key-algorithm (:type u8)
@@ -530,7 +534,8 @@ size, from PSTREAM. See RFC4880 5.2.3.1 for details."
   "Read a single signature subpacket from PSTREAM. Returns the packet
   type and data as multiple values."
   (let* ((length (read-subpacket-length pstream))
-         (type (read-field-value 'subpacket-type pstream))
+         (type (read-field-value 'subpacket-type pstream
+                                 :default :unrecognized))
          (data (read-n-octets (1- length) pstream)))
     (values type data)))
 
