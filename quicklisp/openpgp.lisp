@@ -509,7 +509,7 @@ value."
 (defun check-supported-value (description supported actual)
   "Signal an error unless SUPPORTED is EQL to ACTUAL"
   (unless (eql supported actual)
-    (error "Value ~S for ~A not supported -- only ~A"
+    (error "Value ~S for OpenPGP ~A not supported -- only ~A"
            actual description supported)))
 
 (defun read-subpacket-length (pstream)
