@@ -43,7 +43,10 @@
         (error 'unexpected-sha256-error
                :expected expected-digest
                :actual actual-digest
-               :thing pretty-description)))
+               :thing pretty-description))
+      (unless quietly
+        (format t "~&; Digest check~@[ of ~A~] successful~%"
+                pretty-description)))
     (rename-file file output)
     (probe-file output)))
 
