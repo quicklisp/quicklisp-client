@@ -122,3 +122,16 @@ http://foo/bar-versions.txt."
                    (subseq url 0 suffix-pos)
                    "-versions"
                    extension))))
+
+(defun filter (predicate list)
+  (loop for x in list
+     when (funcall predicate x)
+     collecting x))
+
+(defun flatten (list)
+  (when list
+    (cond ((atom (car list))
+           (cons (car list) (flatten (cdr list))))
+          (t (append (flatten (car list))
+                     (flatten (cdr list)))))))
+

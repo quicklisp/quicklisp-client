@@ -48,6 +48,9 @@
 (defun system-list ()
   (provided-systems t))
 
+(defun all-installed-systems ()
+  (filter #'installedp (system-list)))
+
 (defun update-dist (dist &key (prompt t))
   (when (stringp dist)
     (setf dist (find-dist dist)))
@@ -77,13 +80,50 @@
 (defun help ()
   "For help with Quicklisp, see http://www.quicklisp.org/beta/")
 
-(defun uninstall (system-name)
+(defun uninstall (systems &key remove-dependencies)
+  (unless (consp systems)
+    (setf systems (list systems)))
+  (dolist (system-name systems systems)
+    (let ((system (find-system system-name)))
+      (cond ((and system remove-dependencies)
+             (uninstall-system-dependencies system-name))
+            (system
+             (ql-dist:uninstall system))
+            (t
+             (warn "Unknown system ~S" system-name)
+             nil)))))
+
+(defun uninstall-system-dependencies (system-name)
+  "Uninstalls the dependencies of system-name."
+  (when (symbolp system-name)
+    (setf system-name (string-downcase (symbol-name system-name))))
   (let ((system (find-system system-name)))
-    (cond (system
-           (ql-dist:uninstall system))
+    (cond ((not system)
+           (warn "Unknown system ~S" system-name))
+          ((not (installedp system))
+           (warn "System ~S is not installed" system-name))
           (t
-           (warn "Unknown system ~S" system-name)
-           nil))))
+           ;; consider the set X of `system` dependencies
+           ;; if any piece of installed software depends on a member of this set
+           ;; and is not a member of X, then we cannot delete that member
+           (let* ((system-dependencies (remove-duplicates (mapcar #'name (flatten (dependency-tree system))) :test #'string=))
+                  (installed-systems (all-installed-systems))
+                  (all-other-dependencies
+                   (remove-duplicates
+                    (flatten (mapcar #'required-systems
+                                     (filter
+                                      #'(lambda (system)
+                                          (not (member (name system)
+                                                       (cons system-name system-dependencies)
+                                                       :test #'string=)))
+                                      installed-systems)))
+                    :test #'string=)))
+             (dolist (system system-dependencies)
+               (unless (member system all-other-dependencies :test #'string=)
+                 (format t "To uninstall: ~S~%" system)
+                 (ql-dist:uninstall (find-system system))
+                 (finish-output)))
+             (ql-dist:uninstall system))))))
 
 (defun uninstall-dist (name)
   (let ((dist (find-dist name)))
