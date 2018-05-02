@@ -123,11 +123,6 @@ http://foo/bar-versions.txt."
                    "-versions"
                    extension))))
 
-(defun filter (predicate list)
-  (loop for x in list
-     when (funcall predicate x)
-     collecting x))
-
 (defun flatten (list)
   (when list
     (cond ((atom (car list))

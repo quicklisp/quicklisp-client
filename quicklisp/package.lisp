@@ -17,7 +17,6 @@
            #:safely-read
            #:safely-read-file
            #:make-versions-url
-           #:filter
            #:flatten))
 
 (defpackage #:ql-setup
