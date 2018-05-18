@@ -65,6 +65,9 @@
                                  :input t
                                  :output t
                                  :buffering :full)))
+  (:implementation mezzano
+    (ql-mezzano:tcp-stream-connect host port
+                                   :element-type '(unsigned-byte 8)))
   (:implementation mkcl
     (let* ((endpoint (ql-mkcl:host-ent-address
                       (ql-mkcl:get-host-by-name host)))

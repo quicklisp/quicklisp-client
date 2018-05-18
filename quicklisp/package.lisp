@@ -52,6 +52,7 @@
            #:ecl
            #:gcl
            #:lispworks
+           #:mezzano
            #:mkcl
            #:scl
            #:sbcl))
