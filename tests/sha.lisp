@@ -41,7 +41,7 @@ given pathname should hash to the given hash string."
 (defun file-sha-equal (sha1 sha2)
   (equalp (cdr sha1) sha2))
 
-(deftest verify-vector-info ()
+(deftest test-valid-sha-vectors ()
   (dolist (sha-class '(sha1 sha256 sha512))
     (let* ((subdir (list :relative (format nil "~(~A~)-vectors" sha-class)))
            (data (vector-info (merge-pathnames (make-pathname
@@ -53,4 +53,22 @@ given pathname should hash to the given hash string."
                (is (file-sha-equal
                     (cons file (file-sha-string sha-class file))
                     expected-digest))))))
+
+(defun load-invalid-sha-index ()
+  "Return an alist of CLASS . (SHA-STRING SHA-FILE-PATH) entries for
+  the failing SHA vectors."
+  (let ((index-file (merge-pathnames "failing-sha/index.sexp"
+                                     *base-directory*))
+        (*package* (find-package :quicklisp-client-tests)))
+    (with-open-file (stream index-file)
+      (let ((form (read stream)))
+        (loop for (class sha-string file) in form
+              collect
+              (list class sha-string (merge-pathnames file index-file)))))))
+
+(deftest test-invalid-sha-vectors ()
+  (let ((data (load-invalid-sha-index)))
+    (loop for (class expected-sha file) in data
+          do (is (not (equalp (file-sha-string class file)
+                              expected-sha))))))
 
