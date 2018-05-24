@@ -26,6 +26,12 @@
                                     *base-directory*)))
     (directory (merge-pathnames "*.sha512" directory))))
 
-(deftest openpgp-valid-signatures ()
+(deftest test-openpgp-valid-signatures ()
   (dolist (file (signature-check-files))
     (is (eql :good-signature (check-signature file)))))
+
+(deftest test-load-quicklisp-releases-key ()
+  (let* ((file (merge-pathnames "openpgp/keys/quicklisp-releases.asc"))
+         (key (ql-openpgp::load-public-key key)))
+    (is (equalp (ql-openpgp::packet-type key) :public-key))
+    (is (equalp (ql-openpgp::key-id-string key) "307965ab028b5ff7"))))
