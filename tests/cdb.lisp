@@ -28,5 +28,6 @@
        (lambda (key value)
          ;; test input file maps "foo" to "foo foo" for each line
          (is (equalp (format nil "~A ~A" key key) value)))
-       stream))))
+       stream))
+    (delete-file cdb)))
 
