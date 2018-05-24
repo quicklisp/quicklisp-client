@@ -9,3 +9,4 @@ dists
 local-projects
 retired
 tmp
+tests/coverage-report/
