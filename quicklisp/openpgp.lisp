@@ -713,7 +713,7 @@ specified in RFC 4880 section 4.2."
                          (signature-type signature))
   (let ((sha512 (make-instance 'sha512))
         (trailer (make-array 2 :element-type '(unsigned-byte 8)
-                             :initial-contents (list (version signature) #xFF)))
+                               :initial-contents (list (version signature) #xFF)))
         (size-vector (encode-u32 (length (hashed-data signature))))
         (quick-check-expected (quick-check-value signature)))
     (update-sha-from-file sha512 file)
