@@ -33,4 +33,6 @@
                (:file "dist-update")
                (:file "misc")
                (:file "local-projects")
-               (:file "bundle")))
+               (:file "bundle")
+               (:file "hashes" :pathname "hashes/hashes")
+               (:file "md5" :pathname "hashes/md5")))
