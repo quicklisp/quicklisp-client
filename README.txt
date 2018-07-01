@@ -47,8 +47,8 @@ Deflate library, which is licensed under the following terms:
   from the author.
 
 
-Portions of this client (hashes/md5.lisp) are derived from Pierre Mai's
-MD5 library, which is licensed under the following terms:
+Portions of this client (hashes/md5.lisp and hashes/hashes.lisp) are derived
+from Pierre Mai's MD5 library, which is licensed under the following terms:
 
   This software has been placed into the public domain.
 
