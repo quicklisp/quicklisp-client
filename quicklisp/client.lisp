@@ -30,7 +30,7 @@
             (verbose *quickload-verbose*) &allow-other-keys)
     (let ((*standard-output* (maybe-silence silent *standard-output*))
           (*trace-output*    (maybe-silence silent *trace-output*)))
-      (unless (consp systems)
+      (unless (listp systems)
         (setf systems (list systems)))
       (dolist (thing systems systems)
         (flet ((ql ()
