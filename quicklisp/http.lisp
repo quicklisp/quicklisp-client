@@ -855,5 +855,6 @@ the indexes in the header accordingly."
                  (incf redirect-count)
                  (setf url (merge-urls new-urlstring
                                        url))
-                 (format stream "~&; Redirecting to ~A~%" url))
+                 (format stream "~&; Redirecting to ~A~%" url)
+                 (setf connect-url (or (url *proxy-url*) url)))
                (return (values header (and file (probe-file file)))))))))))
