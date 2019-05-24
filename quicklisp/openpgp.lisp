@@ -723,9 +723,13 @@ specified in RFC 4880 section 4.2."
     (let* ((result (finish-sha sha512))
            (quick-check-actual (first-n-octets 2 result)))
       (when (equalp quick-check-actual quick-check-expected)
+        ;; The RESULT vector encodes a 512-bit integer, while the pk
+        ;; integer can be many more bits than that. Only compare N to
+        ;; the low 512 bits of pk for signature checking.
         (let* ((n (vector-integer result))
-               (pk (expt-mod (signature-value signature)
-                             (e public-key)
-                             (n public-key))))
+               (pk (ldb (byte 512 0)
+                        (expt-mod (signature-value signature)
+                                  (e public-key)
+                                  (n public-key)))))
           (when (= n pk)
             :good-signature))))))
