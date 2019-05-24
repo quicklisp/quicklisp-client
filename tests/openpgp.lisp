@@ -31,7 +31,8 @@
     (is (eql :good-signature (check-signature file)))))
 
 (deftest test-load-quicklisp-releases-key ()
-  (let* ((file (merge-pathnames "openpgp/keys/quicklisp-releases.asc"))
-         (key (ql-openpgp::load-public-key key)))
+  (let* ((file (merge-pathnames "openpgp/keys/quicklisp-releases.asc"
+                                *base-directory*))
+         (key (ql-openpgp::load-public-key file)))
     (is (equalp (ql-openpgp::packet-type key) :public-key))
     (is (equalp (ql-openpgp::key-id-string key) "307965ab028b5ff7"))))
