@@ -280,7 +280,9 @@ into TARGET-VECTOR."
       (setf capacity 0))))
 
 (defmethod update-sha (sha (stream stream) &key start end)
-  (declare (ignore start end))
+  ;;; Update SHA with all remaining octets from STREAM.
+  (when (or start end)
+    (error "START and END are not supported for stream updates"))
   (let ((buffer (make-octet-vector *sha-buffer-size*)))
     (loop
       (let ((end (read-sequence buffer stream)))
