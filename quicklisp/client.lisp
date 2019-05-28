@@ -35,9 +35,14 @@
       (dolist (thing systems systems)
         (flet ((ql ()
                  (autoload-system-and-dependencies thing :prompt prompt)))
-          (if verbose
-              (ql)
-              (call-with-quiet-compilation #'ql)))))))
+          (tagbody :start
+             (restart-case (if verbose
+                               (ql)
+                               (call-with-quiet-compilation #'ql))
+               (register-local-projects ()
+                 :report "Register local projects and try again."
+                 (register-local-projects)
+                 (go :start)))))))))
 
 (defmethod quickload :around (systems &key verbose prompt explain
                                       &allow-other-keys)
