@@ -13,6 +13,92 @@
    (with-output-to-string (s)
      (map nil (lambda (o) (format s "~2,'0X" o)) octet-vector))))
 
+
+;;;; UTF-8 routines adapted lightly from trivial-utf-8
+
+(declaim (inline utf-8-group-size))
+(defun utf-8-group-size (byte)
+  "Determine the amount of bytes that are part of the character
+starting with a given byte."
+  (declare (type fixnum byte))
+  (cond ((zerop (logand byte #b10000000)) 1)
+        ((= (logand byte #b11100000) #b11000000) 2)
+        ((= (logand byte #b11110000) #b11100000) 3)
+        ((= (logand byte #b11111000) #b11110000) 4)
+        (t (error 'utf-8-decoding-error :byte byte
+                  :message "Invalid byte at start of character: 0x~X"))))
+
+(defun utf-8-string-length (bytes &key (start 0) (end (length bytes)))
+  "Calculate the length of the string encoded by the given bytes."
+  (declare (type (simple-array (unsigned-byte 8) (*)) bytes)
+           (type fixnum start end))
+  (loop :with i :of-type fixnum = start
+        :with string-length = 0
+        :while (< i end)
+        :do (progn
+              (incf (the fixnum string-length) 1)
+              (incf i (utf-8-group-size (elt bytes i))))
+        :finally (return string-length)))
+
+(defun get-utf-8-character (bytes group-size &optional (start 0))
+  "Given an array of bytes and the amount of bytes to use,
+extract the character starting at the given start position."
+  (declare (type (simple-array (unsigned-byte 8) (*)) bytes)
+           (type fixnum group-size start))
+  (macrolet ((next-byte ()
+               '(prog1 (elt bytes start)
+                 (incf start)))
+             (six-bits (byte)
+               (let ((b (gensym)))
+                 `(let ((,b ,byte))
+                    (unless (= (logand ,b #b11000000) #b10000000)
+                      (error 'utf-8-decoding-error :byte ,b
+                             :message "Invalid byte 0x~X inside a character."))
+                    (ldb (byte 6 0) ,b))))
+             (test-overlong (byte min-size)
+               (let ((b (gensym)))
+                 `(let ((,b ,byte))
+                    (unless (>= ,b ,min-size)
+                      (error 'utf-8-decoding-error :byte ,b
+                             :message "Overlong byte sequence found."))
+                    ,b))))
+    (case group-size
+      (1 (next-byte))
+      (2 (test-overlong (logior (ash (ldb (byte 5 0) (next-byte)) 6)
+                                (six-bits (next-byte))) 128))
+      (3 (test-overlong (logior (ash (ldb (byte 4 0) (next-byte)) 12)
+                                (ash (six-bits (next-byte)) 6)
+                                (six-bits (next-byte))) 2048))
+      (4 (test-overlong (logior (ash (ldb (byte 3 0) (next-byte)) 18)
+                                (ash (six-bits (next-byte)) 12)
+                                (ash (six-bits (next-byte)) 6)
+                                (six-bits (next-byte))) 65536)))))
+
+(defun utf-8-octets-to-string (bytes-in)
+  "Convert a byte array containing utf-8 encoded characters into
+the string it encodes."
+  (declare (type vector bytes-in))
+  (let ((start 0)
+        (end (length bytes-in)))
+    (declare (type fixnum start end))
+    (loop :with bytes = (coerce bytes-in '(simple-array (unsigned-byte 8) (*)))
+          :with buffer = (make-string (utf-8-string-length bytes :start start :end end) :element-type 'character)
+          :with array-position :of-type fixnum = start
+          :with string-position :of-type fixnum = 0
+          :while (< array-position end)
+          :do (let* ((char (elt bytes array-position))
+                     (current-group (utf-8-group-size char)))
+                (when (> (+ current-group array-position) end)
+                  (error 'utf-8-decoding-error
+                         :message "Unfinished character at end of byte array."))
+                (setf (char buffer string-position)
+                      (code-char (get-utf-8-character bytes current-group
+                                                      array-position)))
+                (incf string-position 1)
+                (incf array-position current-group))
+          :finally (return buffer))))
+
+
 ;;;; r64.lisp
 
 (defvar *radix64-alphabet*
@@ -585,12 +671,6 @@ specified in RFC 4880 section 4.2."
         collect packet))
 
 ;;; User-id packets
-
-(defun utf8-octets-to-string (octets)
-  ;; FIXME: Handle real UTF-8
-  (when (some (lambda (code) (logbitp 7 code)) octets)
-    (error "Proper UTF-8 decoding is not implemented yet"))
-  (map 'string 'code-char octets))
 
 (defmethod specialize-packet-by-type ((packet-type (eql :user-id)) packet)
   (change-class packet
