@@ -837,3 +837,46 @@ specified in RFC 4880 section 4.2."
                                   (n public-key)))))
           (when (= n pk)
             :good-signature))))))
+
+(defun verify-certification-signature (data signature public-key)
+  (unless (equalp (key-id public-key)
+                  (key-id signature))
+    (error "Signature and public key do not match"))
+  (check-supported-value "hash algorithm" :sha-512 (hash-algorithm signature))
+  (check-supported-value "public-key algorithm"
+                         :rsa
+                         (public-key-algorithm signature))
+  (check-supported-value "signature type"
+                         :positive-user-id-certification
+                         (signature-type signature))
+  (let ((sha512 (make-instance 'sha512))
+        (minibuffer (make-array 1 :element-type '(unsigned-byte 8)))
+        (trailer (make-array 2 :element-type '(unsigned-byte 8)
+                               :initial-contents (list (version signature) #xFF)))
+        (size-vector (encode-u32 (length (hashed-data signature))))
+        (quick-check-expected (quick-check-value signature)))
+    (flet ((hash-constant (c)
+             (fill minibuffer c)
+             (update-sha sha512 minibuffer)))
+      (hash-constant #x99)
+      (update-sha sha512 (subseq (encode-u32 (length (data public-key))) 2))
+      (update-sha sha512 (data public-key))
+      (hash-constant #xB4)
+      (update-sha sha512 (encode-u32 (length data)))
+      (update-sha sha512 data)
+      (update-sha sha512 (hashed-data signature))
+      (update-sha sha512 trailer)
+      (update-sha sha512 size-vector))
+    (let* ((result (finish-sha sha512))
+           (quick-check-actual (first-n-octets 2 result)))
+      (when (equalp quick-check-actual quick-check-expected)
+        ;; The RESULT vector encodes a 512-bit integer, while the pk
+        ;; integer can be many more bits than that. Only compare N to
+        ;; the low 512 bits of pk for signature checking.
+        (let* ((n (vector-integer result))
+               (pk (ldb (byte 512 0)
+                        (expt-mod (signature-value signature)
+                                  (e public-key)
+                                  (n public-key)))))
+          (when (= n pk)
+            :good-signature))))))
