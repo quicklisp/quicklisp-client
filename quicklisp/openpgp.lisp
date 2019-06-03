@@ -13,6 +13,9 @@
    (with-output-to-string (s)
      (map nil (lambda (o) (format s "~2,'0X" o)) octet-vector))))
 
+(defun unix-universal-time (unix-time)
+  (+ unix-time (encode-universal-time 0 0 0 1 1 1970 0)))
+
 
 ;;;; UTF-8 routines adapted lightly from trivial-utf-8
 
@@ -339,6 +342,9 @@ the string it encodes."
    (creation-time
     :initarg :creation-time
     :accessor creation-time)
+   (expiration-time
+    :initarg :expiration-time
+    :accessor expiration-time)
    (public-key-algorithm
     :initarg :public-key-algorithm
     :accessor public-key-algorithm)
@@ -350,13 +356,22 @@ the string it encodes."
     :accessor quick-check-value)
    (signature-value
     :initarg :signature-value
-    :accessor signature-value)))
+    :accessor signature-value)
+   (subpackets
+    :initarg :subpackets
+    :reader subpackets)))
 
 (defmethod print-object ((packet rsa-signature-packet) stream)
   (print-unreadable-object (packet stream :type t :identity t)
     (format stream "~A key id ~S"
             (public-key-algorithm packet)
             (key-string (key-id packet)))))
+
+(defgeneric expiredp (packet)
+  (:method ((packet rsa-signature-packet))
+    (let ((expired (expiration-time packet)))
+      (and expired
+           (< expired (get-universal-time))))))
 
 
 (defclass rsa-public-key-packet (packet)
@@ -498,6 +513,9 @@ the string it encodes."
                                       (ldb (byte 8 16) u32)
                                       (ldb (byte 8  8) u32)
                                       (ldb (byte 8  0) u32))))
+
+(defun decode-u32-time (vector)
+  (unix-universal-time (decode-u32 vector)))
 
 (defun %reset (packet-stream)
   "Reset PACKET-STREAM so it can be read again from the beginning."
@@ -726,18 +744,24 @@ specified in RFC 4880 section 4.2."
              (quick-check-value (read-n-octets 2 pstream))
              (rsa-signature-value (read-mpi pstream))
              (raw-creation-time (cdr (assoc :signature-creation-time subpackets)))
-             (creation-time (and raw-creation-time
-                                 (decode-u32 raw-creation-time))))
+             (raw-expiration-time (cdr (assoc :key-expiration-time subpackets)))
+             (creation-time (decode-u32-time raw-creation-time))
+             (expiration-time (and raw-expiration-time
+                                   (+ creation-time
+                                      (decode-u32 raw-expiration-time)))))
         (change-class packet 'rsa-signature-packet
                       :key-id (cdr (assoc :issuer subpackets))
+                      :subpackets subpackets
                       :creation-time creation-time
+                      :expiration-time expiration-time
                       :signature-type signature-type
                       :hash-algorithm hash-algorithm
                       :public-key-algorithm public-key-algorithm
                       :quick-check-value quick-check-value
                       :hashed-data (subseq (data packet)
                                            0 end-of-hashed-data-pos)
-                      :signature-value rsa-signature-value)))))
+                      :signature-value rsa-signature-value
+                      :subpackets subpackets)))))
 
 
 ;;; Misc
