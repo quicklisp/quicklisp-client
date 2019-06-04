@@ -374,20 +374,33 @@ the string it encodes."
            (< expired (get-universal-time))))))
 
 
-(defclass rsa-public-key-packet (packet)
+(defclass public-key-packet (packet)
   ((fingerprint
     :initarg :fingerprint
     :accessor fingerprint)
    (key-id
     :initarg :key-id
     :accessor key-id)
-   (hashed-data
-    :initarg :hashed-data
-    :accessor hashed-data)
    (creation-time
     :initarg :creation-time
-    :accessor creation-time)
-   (n
+    :accessor creation-time)))
+
+(defmethod change-class :around ((packet public-key-packet)
+                                 (new-class t)
+                                 &rest initargs &key &allow-other-keys)
+  (let* ((fingerprint (compute-fingerprint (data packet)))
+         (key-id (subseq fingerprint (- (length fingerprint) 8))))
+    (apply #'call-next-method packet new-class
+           :fingerprint fingerprint
+           :key-id key-id
+           initargs)))
+
+(defmethod print-object ((packet public-key-packet) stream)
+  (print-unreadable-object (packet stream :type t :identity t)
+    (format stream "key id ~S" (key-string (key-id packet)))))
+
+(defclass rsa-public-key-packet (public-key-packet)
+  ((n
     :initarg :n
     :accessor n)
    (e
@@ -396,9 +409,19 @@ the string it encodes."
 
 (defclass rsa-public-subkey-packet (rsa-public-key-packet) ())
 
-(defmethod print-object ((packet rsa-public-key-packet) stream)
-  (print-unreadable-object (packet stream :type t :identity t)
-    (format stream "key id ~S" (key-string (key-id packet)))))
+(defclass dsa-public-key-packet (public-key-packet)
+  ((p
+    :initarg :p
+    :reader p)
+   (q
+    :initarg :q
+    :reader q)
+   (g
+    :initarg :g
+    :reader g)
+   (y
+    :initarg :y
+    :reader y)))
 
 (defvar *initial-fingerprint-vector*
   (make-array 1 :element-type '(unsigned-byte 8) :initial-element #x99 ))
@@ -698,6 +721,24 @@ specified in RFC 4880 section 4.2."
 
 ;;; Public key and subkey packets
 
+(defun specialize-rsa-key (packet pstream)
+  (let* ((n (read-mpi pstream))
+         (e (read-mpi pstream)))
+    (change-class packet 'rsa-public-key-packet
+                  :n n
+                  :e e)))
+
+(defun specialize-dsa-key (packet pstream)
+  (let* ((p (read-mpi pstream))
+         (q (read-mpi pstream))
+         (g (read-mpi pstream))
+         (y (read-mpi pstream)))
+    (change-class packet 'dsa-public-key-packet
+                  :p p
+                  :q q
+                  :g g
+                  :y y)))
+
 (defmethod specialize-packet-by-type ((packet-type (eql :public-key)) packet)
   (let* ((pstream (pstream (data packet)))
          (version (read-u8 pstream)))
@@ -705,17 +746,13 @@ specified in RFC 4880 section 4.2."
     (let ((creation-time (read-u32 pstream))
           (public-key-algorithm (read-field-value 'public-key-algorithm
                                                   pstream)))
-      (check-supported-value "public-key algorithm" :rsa public-key-algorithm)
-      (let* ((n (read-mpi pstream))
-             (e (read-mpi pstream))
-             (fingerprint (compute-fingerprint (data packet)))
-             (key-id (subseq fingerprint (- (length fingerprint) 8))))
-        (change-class packet 'rsa-public-key-packet
-                      :fingerprint fingerprint
-                      :key-id key-id
-                      :creation-time creation-time
-                      :n n
-                      :e e)))))
+      (change-class packet 'public-key-packet
+                    :creation-time (unix-universal-time creation-time))
+      (ecase public-key-algorithm
+        (:rsa
+         (specialize-rsa-key packet pstream))
+        (:dsa
+         (specialize-dsa-key packet pstream))))))
 
 (defmethod specialize-packet-by-type ((packet-type (eql :public-subkey)) packet)
   (change-class (specialize-packet-by-type :public-key packet)
@@ -801,7 +838,7 @@ specified in RFC 4880 section 4.2."
 
 (defun load-public-key (file)
   (let* ((packet (load-packet-from-file file)))
-    (check-type packet rsa-public-key-packet)
+    (check-type packet public-key-packet)
     packet))
 
 (defun verify-signature (file signature public-key)
