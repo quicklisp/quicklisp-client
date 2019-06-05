@@ -857,6 +857,33 @@ specified in RFC 4880 section 4.2."
         (setf result (mod (* result sqr) modulus))
         finally (return result)))
 
+(defun modular-inverse (N modulus)
+  "Returns M such that N * M mod MODULUS = 1"
+  (declare (type (integer 1 *) modulus))
+  (declare (type (integer 0 *) n))
+  (when (or (zerop n) (and (evenp n) (evenp modulus)))
+    (return-from modular-inverse 0))
+  (loop
+     with r1 of-type integer = n
+     and r2 of-type integer = modulus
+     and u1 of-type integer = 1
+     and u2 of-type integer = 0
+     and q of-type integer = 0
+     and r of-type integer = 0
+     until (zerop r2)
+     do (progn
+          (multiple-value-setq (q r) (floor r1 r2))
+          (setf r1 r2
+                r2 r)
+          (decf u1 (* q u2))
+          (rotatef u1 u2))
+     finally (return (let ((inverse u1))
+                       (when (minusp inverse)
+                         (setf inverse (mod inverse modulus)))
+                       (if (zerop (mod (* n inverse) modulus))
+                           0
+                           inverse)))))
+
 (defun vector-integer (vector)
   "Convert the octet vector VECTOR to an integer."
   (let ((result 0))
@@ -874,14 +901,45 @@ specified in RFC 4880 section 4.2."
     (check-type packet public-key-packet)
     packet))
 
+(defgeneric good-signature-p (message-hash signature public-key)
+  (:method (message-hash
+            (signature rsa-signature-packet)
+            (public-key rsa-public-key-packet))
+    (= message-hash
+       ;; The RESULT vector encodes a 512-bit integer, while the pk
+       ;; integer can be many more bits than that. Only compare N to
+       ;; the low 512 bits of pk for signature checking.
+       (ldb (byte 512 0)
+            (expt-mod (signature-value signature)
+                      (e public-key)
+                      (n public-key)))))
+  (:method (message-hash
+            (signature dsa-signature-packet)
+            (public-key dsa-public-key-packet))
+    (let* ((r (r signature))
+           (s (s signature))
+           (p (p public-key))
+           (q (q public-key))
+           (g (g public-key))
+           (y (y public-key))
+           (w (modular-inverse s q))
+           (target-size (integer-length q))
+           (message-size (integer-length message-hash))
+           (m (ldb (byte target-size (- message-size target-size))
+                   message-hash))
+           (u1 (mod (* m w) q))
+           (u2 (mod (* r w) q))
+           (v (mod (mod (* (expt-mod g u1 p)
+                           (expt-mod y u2 p))
+                        p)
+                   q)))
+      (= v r))))
+
 (defun verify-signature (file signature public-key)
   (unless (equalp (key-id public-key)
                   (key-id signature))
     (error "Signature and public key do not match"))
   (check-supported-value "hash algorithm" :sha-512 (hash-algorithm signature))
-  (check-supported-value "public-key algorithm"
-                         :rsa
-                         (public-key-algorithm signature))
   (check-supported-value "signature type"
                          :binary-document
                          (signature-type signature))
@@ -897,16 +955,10 @@ specified in RFC 4880 section 4.2."
     (let* ((result (finish-sha sha512))
            (quick-check-actual (first-n-octets 2 result)))
       (when (equalp quick-check-actual quick-check-expected)
-        ;; The RESULT vector encodes a 512-bit integer, while the pk
-        ;; integer can be many more bits than that. Only compare N to
-        ;; the low 512 bits of pk for signature checking.
-        (let* ((n (vector-integer result))
-               (pk (ldb (byte 512 0)
-                        (expt-mod (signature-value signature)
-                                  (e public-key)
-                                  (n public-key)))))
-          (when (= n pk)
-            :good-signature))))))
+        (when (good-signature-p (vector-integer result)
+                                signature
+                                public-key)
+          :good-signature)))))
 
 (defun verify-certification-signature (data signature public-key)
   (unless (equalp (key-id public-key)
