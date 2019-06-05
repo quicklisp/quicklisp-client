@@ -866,7 +866,7 @@ specified in RFC 4880 section 4.2."
 
 (defun load-signature (file)
   (let* ((packet (load-packet-from-file file)))
-    (check-type packet rsa-signature-packet)
+    (check-type packet signature-packet)
     packet))
 
 (defun load-public-key (file)
