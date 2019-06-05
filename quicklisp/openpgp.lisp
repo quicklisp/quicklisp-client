@@ -745,7 +745,7 @@ specified in RFC 4880 section 4.2."
 (defmethod specialize-packet-by-type ((packet-type (eql :user-id)) packet)
   (change-class packet
                 'user-id-packet
-                :user-id (utf8-octets-to-string (data packet))))
+                :user-id (utf-8-octets-to-string (data packet))))
 
 
 ;;; Public key and subkey packets
