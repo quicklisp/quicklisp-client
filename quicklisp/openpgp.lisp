@@ -329,7 +329,8 @@ the string it encodes."
   (:method (packet)
     (specialize-packet-by-type (packet-type packet) packet)))
 
-(defclass rsa-signature-packet (packet)
+
+(defclass signature-packet (packet)
   ((key-id
     :initarg :key-id
     :accessor key-id)
@@ -354,21 +355,31 @@ the string it encodes."
    (quick-check-value
     :initarg :quick-check-value
     :accessor quick-check-value)
-   (signature-value
-    :initarg :signature-value
-    :accessor signature-value)
    (subpackets
     :initarg :subpackets
     :reader subpackets)))
 
-(defmethod print-object ((packet rsa-signature-packet) stream)
+(defmethod print-object ((packet signature-packet) stream)
   (print-unreadable-object (packet stream :type t :identity t)
     (format stream "~A key id ~S"
             (public-key-algorithm packet)
             (key-string (key-id packet)))))
 
+(defclass rsa-signature-packet (signature-packet)
+  ((signature-value
+    :initarg :signature-value
+    :accessor signature-value)))
+
+(defclass dsa-signature-packet (signature-packet)
+  ((r
+    :initarg :r
+    :reader r)
+   (s
+    :initarg :s
+    :reader s)))
+
 (defgeneric expiredp (packet)
-  (:method ((packet rsa-signature-packet))
+  (:method ((packet signature-packet))
     (let ((expired (expiration-time packet)))
       (and expired
            (< expired (get-universal-time))))))
@@ -385,16 +396,6 @@ the string it encodes."
     :initarg :creation-time
     :accessor creation-time)))
 
-(defmethod change-class :around ((packet public-key-packet)
-                                 (new-class t)
-                                 &rest initargs &key &allow-other-keys)
-  (let* ((fingerprint (compute-fingerprint (data packet)))
-         (key-id (subseq fingerprint (- (length fingerprint) 8))))
-    (apply #'call-next-method packet new-class
-           :fingerprint fingerprint
-           :key-id key-id
-           initargs)))
-
 (defmethod print-object ((packet public-key-packet) stream)
   (print-unreadable-object (packet stream :type t :identity t)
     (format stream "key id ~S" (key-string (key-id packet)))))
@@ -405,7 +406,10 @@ the string it encodes."
     :accessor n)
    (e
     :initarg :e
-    :accessor e)))
+    :accessor e)
+   (subkey-class-name
+    :reader subkey-class-name
+    :initform 'rsa-public-subkey-packet)))
 
 (defclass rsa-public-subkey-packet (rsa-public-key-packet) ())
 
@@ -421,7 +425,29 @@ the string it encodes."
     :reader g)
    (y
     :initarg :y
-    :reader y)))
+    :reader y)
+   (subkey-class-name
+    :reader subkey-class-name
+    :initform 'dsa-public-subkey-packet)))
+
+(defclass dsa-public-subkey-packet (dsa-public-key-packet) ())
+
+(defclass elgamal-public-key-packet (public-key-packet)
+  ((p
+    :initarg :p
+    :reader p)
+   (g
+    :initarg :g
+    :reader g)
+   (y
+    :initarg :y
+    :reader y)
+   (subkey-class-name
+    :reader subkey-class-name
+    :initform 'elgamal-public-subkey-packet)))
+
+(defclass elgamal-public-subkey-packet (elgamal-public-key-packet) ())
+
 
 (defvar *initial-fingerprint-vector*
   (make-array 1 :element-type '(unsigned-byte 8) :initial-element #x99 ))
@@ -604,7 +630,8 @@ value."
   (17 . :persona-certification)
   (18 . :casual-certification)
   (19 . :positive-user-id-certification)
-  (24 . :subkey-binding-signature))
+  (24 . :subkey-binding-signature)
+  (48 . :certification-revokation-signature))
 
 
 (define-field subpacket-type (:type u8)
@@ -625,7 +652,9 @@ value."
   ;; RFC 4880 section 9.1
   (1 . :rsa)
   (3 . :rsa-sign-only)
-  (17 . :dsa))
+  (16 . :elgamal)
+  (17 . :dsa)
+  (19 . :ecdsa))
 
 (define-field hash-algorithm (:type u8)
   ;; RFC 4880 section 9.4
@@ -721,42 +750,40 @@ specified in RFC 4880 section 4.2."
 
 ;;; Public key and subkey packets
 
-(defun specialize-rsa-key (packet pstream)
-  (let* ((n (read-mpi pstream))
-         (e (read-mpi pstream)))
-    (change-class packet 'rsa-public-key-packet
-                  :n n
-                  :e e)))
-
-(defun specialize-dsa-key (packet pstream)
-  (let* ((p (read-mpi pstream))
-         (q (read-mpi pstream))
-         (g (read-mpi pstream))
-         (y (read-mpi pstream)))
-    (change-class packet 'dsa-public-key-packet
-                  :p p
-                  :q q
-                  :g g
-                  :y y)))
+(defun specialize-key (packet class pstream &rest initargs)
+  (let ((args (loop for initarg in initargs
+                    collect initarg
+                    collect (read-mpi pstream))))
+    (apply #'change-class packet class args)))
 
 (defmethod specialize-packet-by-type ((packet-type (eql :public-key)) packet)
   (let* ((pstream (pstream (data packet)))
          (version (read-u8 pstream)))
     (check-supported-value "version" 4 version)
-    (let ((creation-time (read-u32 pstream))
-          (public-key-algorithm (read-field-value 'public-key-algorithm
-                                                  pstream)))
+    (let* ((creation-time (read-u32 pstream))
+           (public-key-algorithm (read-field-value 'public-key-algorithm
+                                                   pstream))
+           (fingerprint (compute-fingerprint (data packet)))
+           (key-id (subseq fingerprint (- (length fingerprint) 8))))
       (change-class packet 'public-key-packet
-                    :creation-time (unix-universal-time creation-time))
+                    :creation-time (unix-universal-time creation-time)
+                    :fingerprint fingerprint
+                    :key-id key-id)
       (ecase public-key-algorithm
         (:rsa
-         (specialize-rsa-key packet pstream))
+         (specialize-key packet 'rsa-public-key-packet pstream
+                         ':n ':e))
         (:dsa
-         (specialize-dsa-key packet pstream))))))
+         (specialize-key packet 'dsa-public-key-packet pstream
+                         ':p ':q ':g ':y))
+        (:elgamal
+         (specialize-key packet 'elgamal-public-key-packet pstream
+                         ':p ':g ':y))))))
 
 (defmethod specialize-packet-by-type ((packet-type (eql :public-subkey)) packet)
-  (change-class (specialize-packet-by-type :public-key packet)
-                'rsa-public-subkey-packet))
+  (let ((specialized (specialize-packet-by-type :public-key packet)))
+    (change-class specialized
+                  (subkey-class-name specialized))))
 
 
 ;;; Signature packet
@@ -769,9 +796,6 @@ specified in RFC 4880 section 4.2."
           (public-key-algorithm (read-field-value 'public-key-algorithm
                                                   pstream))
           (hash-algorithm (read-field-value 'hash-algorithm pstream)))
-      (check-supported-value "public-key algorithm"
-                             :rsa
-                             public-key-algorithm)
       (let* ((hashed-subpackets (read-signature-subpackets pstream))
              ;; Important to save the position immediately after
              ;; reading the hashed subpackets
@@ -779,14 +803,13 @@ specified in RFC 4880 section 4.2."
              (unhashed-subpackets (read-signature-subpackets pstream))
              (subpackets (append hashed-subpackets unhashed-subpackets))
              (quick-check-value (read-n-octets 2 pstream))
-             (rsa-signature-value (read-mpi pstream))
              (raw-creation-time (cdr (assoc :signature-creation-time subpackets)))
              (raw-expiration-time (cdr (assoc :key-expiration-time subpackets)))
              (creation-time (decode-u32-time raw-creation-time))
              (expiration-time (and raw-expiration-time
                                    (+ creation-time
                                       (decode-u32 raw-expiration-time)))))
-        (change-class packet 'rsa-signature-packet
+        (change-class packet 'signature-packet
                       :key-id (cdr (assoc :issuer subpackets))
                       :subpackets subpackets
                       :creation-time creation-time
@@ -797,8 +820,18 @@ specified in RFC 4880 section 4.2."
                       :quick-check-value quick-check-value
                       :hashed-data (subseq (data packet)
                                            0 end-of-hashed-data-pos)
-                      :signature-value rsa-signature-value
-                      :subpackets subpackets)))))
+                      :subpackets subpackets)
+        (ecase public-key-algorithm
+          (:rsa
+           (let ((rsa-signature-value (read-mpi pstream)))
+             (change-class packet 'rsa-signature-packet
+                           :signature-value rsa-signature-value)))
+          (:dsa
+           (let ((r (read-mpi pstream))
+                 (s (read-mpi pstream)))
+             (change-class packet 'dsa-signature-packet
+                           :r r
+                           :s s))))))))
 
 
 ;;; Misc
