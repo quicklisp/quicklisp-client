@@ -20,16 +20,18 @@
 (defun maybe-silence (silent stream)
   (or (and silent (make-broadcast-stream)) stream))
 
-(defgeneric quickload (systems &key verbose silent prompt explain &allow-other-keys)
+(defgeneric quickload (systems &key verbose silent prompt explain print-case &allow-other-keys)
   (:documentation
    "Load SYSTEMS the quicklisp way. SYSTEMS is a designator for a list
    of things to be loaded.")
   (:method (systems &key
             (prompt *quickload-prompt*)
             (silent nil)
-            (verbose *quickload-verbose*) &allow-other-keys)
+            (verbose *quickload-verbose*)
+            (print-case :upcase) &allow-other-keys)
     (let ((*standard-output* (maybe-silence silent *standard-output*))
-          (*trace-output*    (maybe-silence silent *trace-output*)))
+          (*trace-output*    (maybe-silence silent *trace-output*))
+          (*print-case*      print-case))
       (unless (consp systems)
         (setf systems (list systems)))
       (dolist (thing systems systems)
