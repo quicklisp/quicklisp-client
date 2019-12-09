@@ -199,12 +199,16 @@ quicklisp at CL startup."
   (:documentation "Return all directory entries of DIRECTORY as a
   list, or NIL if there are no directory entries. Excludes the \".\"
   and \"..\" entries.")
-  (:implementation allegro
-    (directory directory
-               #+allegro :directories-are-files
-               #+allegro nil
-               #+allegro :follow-symbolic-links
-               #+allegro nil))
+  (:implementation
+   allegro
+   (when (let* ((namestring (namestring directory))
+		(lastchar (subseq namestring (1- (length namestring)))))
+	   (member lastchar '("/" "\\") :test #'string-equal))
+     (directory directory
+		#+allegro :directories-are-files
+		#+allegro nil
+		#+allegro :follow-symbolic-links
+		#+allegro nil)))
   (:implementation abcl
     (directory (merge-pathnames *wild-entry* directory)
                #+abcl :resolve-symlinks #+abcl nil))
