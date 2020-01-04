@@ -166,14 +166,15 @@ Quicklisp-provided systems first, and catching ASDF missing
 dependencies too if possible."
   (setf name (string-downcase name))
   (with-simple-restart (abort "Give up on ~S" name)
-    (let ((strategy (compute-load-strategy name))
-          (tried-so-far (make-hash-table :test 'equalp)))
-      (show-load-strategy strategy)
-      (when (or (not prompt)
-                (press-enter-to-continue))
-        (tagbody
-         retry
-         (handler-case (apply-load-strategy strategy)
+    (let ((tried-so-far (make-hash-table :test 'equalp)))
+      (tagbody
+       retry
+         (handler-case
+             (let ((strategy (compute-load-strategy name)))
+               (show-load-strategy strategy)
+               (when (or (not prompt)
+                         (press-enter-to-continue))
+                 (apply-load-strategy strategy)))
            (asdf:missing-dependency-of-version (c)
              ;; Nothing Quicklisp can do to recover from this, so just
              ;; resignal
@@ -182,18 +183,19 @@ dependencies too if possible."
              (let ((parent (asdf::missing-required-by c))
                    (missing (asdf::missing-requires c)))
                (typecase parent
-                 (asdf:system
+                 ((or null asdf:system)
+                  ;; NIL parent comes from :defsystem-depends-on failures
                   (if (gethash missing tried-so-far)
-                     (error "Dependency looping -- already tried to load ~
+                      (error "Dependency looping -- already tried to load ~
                                  ~A" missing)
-                     (setf (gethash missing tried-so-far) missing))
+                      (setf (gethash missing tried-so-far) missing))
                   (autoload-system-and-dependencies missing
-                                                   :prompt prompt)
+                                                    :prompt prompt)
                   (go retry))
                  (t
                   ;; Error isn't from a system dependency, so there's
                   ;; nothing to autoload
-                  (error c)))))))))
+                  (error c))))))))
     name))
 
 (defvar *initial-dist-url*
