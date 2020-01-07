@@ -259,6 +259,14 @@
                   #:socket-connect
                   #:socket-make-stream))
 
+;;; Mezzano
+
+(define-implementation-package :mezzano #:ql-mezzano
+  (:documentation "Mezzano Lisp Operating System - https://github.com/froggey/Mezzano")
+  (:class mezzano)
+  (:reexport-from #:mezzano.network.tcp
+                  #:tcp-stream-connect))
+
 ;;; MKCL
 
 (define-implementation-package :mkcl #:ql-mkcl
