@@ -767,16 +767,16 @@ the given NAME."
 
 (defmethod install ((release release))
   (let ((archive (ensure-local-archive-file release))
-        (tar (qmerge "tmp/release-install.tar"))
         (output (relative-to (dist release)
                              (make-pathname :directory
                                             (list :relative "software"))))
         (tracking (install-metadata-file release)))
-    (ensure-directories-exist tar)
-    (ensure-directories-exist output)
-    (ensure-directories-exist tracking)
-    (gunzip archive tar)
-    (unpack-tarball tar :directory output)
+    (with-temporary-file (tar "release-install.tar")
+      (ensure-directories-exist tar)
+      (ensure-directories-exist output)
+      (ensure-directories-exist tracking)
+      (gunzip archive tar)
+      (unpack-tarball tar :directory output))
     (ensure-directories-exist tracking)
     (with-open-file (stream tracking
                             :direction :output

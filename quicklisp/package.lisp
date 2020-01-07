@@ -16,7 +16,8 @@
            #:file-size
            #:safely-read
            #:safely-read-file
-           #:make-versions-url))
+           #:make-versions-url
+           #:with-temporary-file))
 
 (defpackage #:ql-setup
   (:documentation

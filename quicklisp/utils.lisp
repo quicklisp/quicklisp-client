@@ -122,3 +122,24 @@ http://foo/bar-versions.txt."
                    (subseq url 0 suffix-pos)
                    "-versions"
                    extension))))
+
+(defun call-with-temporary-file (fun template-pathname)
+  (assert (null (pathname-directory template-pathname)))
+  (let* ((relative-file (merge-pathnames template-pathname
+                                        #p"tmp/"))
+         (absolute-file (ql-setup:qmerge relative-file))
+         (randomized-file (make-pathname :name (format nil "~A-~36,5,'0R"
+                                                       (pathname-name template-pathname)
+                                                       (random #xFFFFFF))
+                                         :defaults absolute-file)))
+    (unwind-protect
+        (funcall fun randomized-file)
+      (delete-file-if-exists randomized-file))))
+
+;;; TODO: Use this where (qmerge "tmp/...") is used, when possible
+(defmacro with-temporary-file ((var template) &body body)
+  "Evaluate BODY with VAR bound to a temporary pathname created by
+adding random data to the pathname-name of TEMPLATE, which should be a
+pathname without a directory component. After evaluation, the
+temporary pathname is deleted if it exists."
+  `(call-with-temporary-file (lambda (,var) ,@body) ,template))
