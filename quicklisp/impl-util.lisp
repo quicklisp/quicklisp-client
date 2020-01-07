@@ -191,7 +191,7 @@ quicklisp at CL startup."
     (not (or (pathname-name entry)
              (pathname-type entry))))
   (:implementation allegro
-    (ql-allegro:file-directory-p entry))
+    (ql-allegro:file-directory-p entry :follow-symbolic-links nil))
   (:implementation lispworks
     (ql-lispworks:file-directory-p entry)))
 
