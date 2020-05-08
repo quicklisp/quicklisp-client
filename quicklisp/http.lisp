@@ -359,7 +359,7 @@ information."
 (defun make-request-buffer (host port path &key (method "GET"))
   "Return an octet vector suitable for sending as an HTTP 1.1 request."
   (setf method (string method))
-  (when *proxy-url*
+  (when (and *proxy-url* (not (string= (scheme (url *proxy-url*)) "socks5")))
     (setf path (full-proxy-path host port path)))
   (let ((sink (make-instance 'octet-sink)))
     (flet ((add-line (&rest strings)
@@ -804,6 +804,40 @@ the indexes in the header accordingly."
         (apply call (urlstring url) file rest)
         (error "Unknown scheme ~S" url))))
 
+(defun socks5-read-reply (connection length)
+  "Ready a reply packet from a SOCKS5 server. Check the protocol version
+and length."
+  (let* ((buffer (make-octet-vector length))
+         (n-octets (read-octets buffer connection)))
+    (unless (and (= n-octets length) (= 5 (aref buffer 0)))
+      (error "SOCKS5 protocol error"))
+    buffer))
+
+(defun socks5-handshake (connection hostname port)
+  ;; Send hello. Version 5, no authentication.
+  (write-octets #(5 1 0) connection)
+  (socks5-read-reply connection 2)
+
+  ;; Send CONNECT with address type DOMAINNAME.
+  (let ((sink (make-instance 'octet-sink)))
+    (add-octets #(5 1 0 3) sink)
+    (add-octet (length hostname) sink)
+    (loop for ch across hostname do (add-octet (char-int ch) sink))
+    (flet ((htons (num)
+             (vector (logand (ash num -8) #xff) (logand num #xff))))
+      (add-octets (htons port) sink))
+    (write-octets (sink-buffer sink) connection))
+
+  ;; Check response. If successful then subsequent data on CONNECTION
+  ;; will be tunneled to remote server.
+  (let ((reply (socks5-read-reply connection 10)))
+    (case (aref reply 1)
+      (0 t)
+      (3 (error "SOCKS5 network unreachable"))
+      (4 (error "SOCKS5 host unreachable ~S" hostname))
+      (5 (error "SOCKS5 connection refused ~S" hostname))
+      (otherwise (error "SOCKS5 unknown error ~S" hostname)))))
+
 (defun http-fetch (url file &key (follow-redirects t) quietly
               (if-exists :rename-and-delete)
               (maximum-redirects *maximum-redirects*))
@@ -822,6 +856,9 @@ the indexes in the header accordingly."
               :url original-url
               :redirect-count redirect-count))
      (with-connection (connection (hostname connect-url) (or (port connect-url) 80))
+       (when (string= (scheme connect-url) "socks5")
+         (socks5-handshake connection (hostname original-url) (or (port original-url) 80))
+         (format stream "~&; Connected via SOCKS5 proxy at ~A~%" connect-url))
        (let ((cbuf (make-instance 'cbuf :connection connection))
              (request (request-buffer "GET" url)))
          (write-octets request connection)
