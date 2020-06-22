@@ -128,6 +128,12 @@
   (:use #:cl)
   (:export #:gunzip))
 
+(defpackage #:ql-md5
+  (:documentation
+   "A simple implementation of md5.")
+  (:use #:cl)
+  (:export #:md5-file))
+
 (defpackage #:ql-cdb
   (:documentation
    "Read and write CDB files; code adapted from ZCDB.")
