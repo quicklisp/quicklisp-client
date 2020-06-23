@@ -31,6 +31,5 @@
                (:file "client-info")
                (:file "client-update")
                (:file "dist-update")
-               (:file "misc")
                (:file "local-projects")
                (:file "bundle")))
