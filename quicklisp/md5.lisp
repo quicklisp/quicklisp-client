@@ -3,11 +3,7 @@
 (cl:in-package #:ql-md5)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *md5-t*
-    (make-array 64 :element-type '(unsigned-byte 32)
-                   :initial-contents
-                   (loop for i from 1 to 64
-                         collect (truncate (* 4294967296 (abs (sin (float i 0.0d0)))))))))
+  (defun md5-t (i) (truncate (* 4294967296 (abs (sin (float i 0.0d0)))))))
 
 (declaim (ftype (function ((simple-array (unsigned-byte 32) (4)) (simple-array (unsigned-byte 32) (16)))
                           (simple-array (unsigned-byte 32) (4))) update-md5-block))
@@ -15,8 +11,7 @@
   (declare (type (simple-array (unsigned-byte 32) (4)) regs)
            (type (simple-array (unsigned-byte 32) (16)) block)
            (optimize (speed 3) (safety 0)))
-  (let ((a (aref regs 0)) (b (aref regs 1))
-        (c (aref regs 2)) (d (aref regs 3)))
+  (let ((a (aref regs 0)) (b (aref regs 1)) (c (aref regs 2)) (d (aref regs 3)))
     (declare (type (unsigned-byte 32) a b c d))
     (flet ((f (x y z)
              (declare (type (unsigned-byte 32) x y z))
@@ -34,8 +29,7 @@
              (declare (type (unsigned-byte 32) a b))
              (the (unsigned-byte 32) (ldb (byte 32 0) (+ a b))))
            (rol32 (a s)
-             (declare (type (unsigned-byte 32) a)
-                      (type (integer 0 32) s))
+             (declare (type (unsigned-byte 32) a) (type (integer 0 32) s))
              (the (unsigned-byte 32) (logior (ldb (byte 32 0) (ash a s)) (ash a (- s 32))))))
       (declare (ftype (function ((unsigned-byte 32) (unsigned-byte 32) (unsigned-byte 32))
                                 (unsigned-byte 32)) f g h i)
@@ -47,8 +41,7 @@
                          collect
                          `(setf ,a (mod32+ ,b
                                            (rol32 (mod32+ (mod32+ ,a (,op ,b ,c ,d))
-                                                          (mod32+ (aref ,block ,k)
-                                                                  ,(aref *md5-t* (1- i))))
+                                                          (mod32+ (aref ,block ,k) ,(md5-t i)))
                                                   ,s)))
                          into result
                          finally (return `(progn ,@result)))))
@@ -91,8 +84,7 @@ a lexical closure with the same arg signature to be called for continuation."
   (let ((tmpblk (make-array 16 :element-type '(unsigned-byte 32)))
         (regs (make-array 4 :element-type '(unsigned-byte 32)
                             :initial-contents '(#x67452301 #xefcdab89 #x98badcfe #x10325476)))
-        (wip 0)
-        (len 0))
+        (wip 0) (len 0))
     (declare (type (unsigned-byte 32) wip) (type fixnum len)
              (type (simple-array (unsigned-byte 32) (16)) tmpblk)
              (type (simple-array (unsigned-byte 32) (4)) regs))
@@ -111,11 +103,9 @@ a lexical closure with the same arg signature to be called for continuation."
              (setf (aref tmpblk 14) (ldb (byte 32 0) nbits)
                    (aref tmpblk 15) (ldb (byte 32 32) nbits))
              (update-md5-block regs tmpblk)
-             (let ((ret (make-array 16 :element-type '(unsigned-byte 8))))
-               (dotimes (i 16)
-                 (setf (aref ret i)
-                       (ldb (byte 8 (* 8 (logand 3 i))) (aref regs (ash i -2)))))
-               (format nil "~(~{~2,'0x~}~)" (loop for x across ret collect x)))))
+             (format nil "~(~{~2,'0x~}~)" (loop for i below 16
+                                                collect (ldb (byte 8 (* 8 (logand 3 i)))
+                                                             (aref regs (ash i -2)))))))
          (process (seq &key (start 0) end finalize)
            (declare (type (simple-array (unsigned-byte 8) (*)) seq))
            (map nil #'inp (subseq seq start end))
@@ -127,11 +117,9 @@ a lexical closure with the same arg signature to be called for continuation."
 
 (defun md5-stream (stream)
   (let* ((buf (make-array #x10000 :element-type '(unsigned-byte 8)))
-         (idx (read-sequence buf stream))
-         (process #'md5-seq))
+         (idx (read-sequence buf stream)) (process #'md5-seq))
     (declare (type (simple-array (unsigned-byte 8) (#x10000)) buf)
-             (type fixnum idx)
-             (type function process))
+             (type fixnum idx) (type function process))
     (loop until (< idx #x10000) do
       (setf process (funcall process buf)
             idx (read-sequence buf stream)))
