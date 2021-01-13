@@ -497,7 +497,9 @@
 (defun dist-name-pathname (name)
   "Return the pathname that would be used for an installed dist with
 the given NAME."
-  (qmerge (make-pathname :directory (list :relative "dists" name))))
+  (qmerge (make-pathname :directory (list* :relative
+                                           "dists"
+                                           (split-slashes name)))))
 
 (defmethod slot-unbound (class (dist dist) (slot (eql 'base-directory)))
   (declare (ignore class))
@@ -577,7 +579,7 @@ the given NAME."
 
 (defun standard-dist-enumeration-function ()
   "The default function used for producing a list of dist objects."
-  (loop for file in (directory (qmerge "dists/*/distinfo.txt"))
+  (loop for file in (directory (qmerge "dists/**/distinfo.txt"))
         collect (make-dist-from-file file)))
 
 (defun all-dists ()
