@@ -23,7 +23,7 @@
 ;;; ASDF is a hard requirement of quicklisp. Make sure it's either
 ;;; already loaded or load it from quicklisp's bundled version.
 
-(defvar *required-asdf-version* "2.26")
+(defvar *required-asdf-version* "3.0")
 
 ;;; Put ASDF's fasls in a separate directory
 
