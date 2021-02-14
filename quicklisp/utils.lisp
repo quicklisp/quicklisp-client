@@ -56,31 +56,29 @@
   (when (probe-file pathname)
     (delete-file pathname)))
 
-(defun split (line delimiter)
+(defun split-spaces (line)
   (let ((words '())
         (mark 0)
         (pos 0))
     (labels ((finish ()
                (setf pos (length line))
                (save)
-               (return-from split (nreverse words)))
+               (return-from split-spaces (nreverse words)))
              (save ()
                (when (< mark pos)
                  (push (subseq line mark pos) words)))
              (mark ()
                (setf mark pos))
              (in-word (char)
-               (cond
-                 ((char= char
-                         delimiter)
+               (case char
+                 (#\Space
                     (save)
                     #'in-space)
                  (t
                     #'in-word)))
              (in-space (char)
-               (cond
-                 ((char= char
-                         delimiter)
+               (case char
+                 (#\Space
                     #'in-space)
                  (t
                     (mark)
@@ -89,12 +87,6 @@
         (dotimes (i (length line) (finish))
           (setf pos i)
           (setf state (funcall state (char line i))))))))
-
-(defun split-spaces (line)
-  (split line #\Space))
-
-(defun split-slashes (line)
-  (split line #\/))
 
 (defun first-line (file)
   (with-open-file (stream file)

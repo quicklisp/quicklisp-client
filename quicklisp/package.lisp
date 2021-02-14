@@ -12,7 +12,6 @@
            #:delete-file-if-exists
            #:ensure-file-exists
            #:split-spaces
-           #:split-slashes
            #:first-line
            #:file-size
            #:safely-read
