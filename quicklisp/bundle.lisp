@@ -202,8 +202,12 @@
 
 (defmethod write-loader-script ((bundle bundle) stream)
   (let ((template-lines
-         (load-time-value
-          (with-open-file (stream #. (merge-pathnames "bundle-template"
+	 (load-time-value
+	  ;; On Genera, the semantics of Unix pathnames cause merging a filename with
+	  ;; no type against defaults with a type to leave the type as :UNSPECIFIC.
+	  ;; So, explicitly provide the type here to avoid that problem. (I'm not
+	  ;; sure what would happen if I were to change that behavior. --Palter)
+	  (with-open-file (stream #. (merge-pathnames "bundle-template.lisp"
                                                       (or *compile-file-truename*
                                                           *load-truename*)))
             (loop for line = (read-line stream nil)

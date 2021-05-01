@@ -98,7 +98,9 @@
                                   :element-type '(unsigned-byte 8)
                                   :input t
                                   :output t
-                                  :buffering :full))))
+                                  :buffering :full)))
+  (:implementation genera
+   (ql-genera:open-tcp-stream host port nil :direction :io :characters nil)))
 
 (definterface read-octets (buffer connection)
   (:documentation "Read from CONNECTION into BUFFER. Returns the
