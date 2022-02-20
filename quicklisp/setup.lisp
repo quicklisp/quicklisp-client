@@ -89,7 +89,7 @@
                    :quicklisp-systems (remove-duplicates quicklisp-systems))))
 
 (defun show-load-strategy (strategy)
-  (format t "To load ~S:~%" (name strategy))
+  (format t "~&To load ~S:~%" (name strategy))
   (let ((asdf-systems (asdf-systems strategy))
         (releases (quicklisp-releases strategy)))
     (when asdf-systems
