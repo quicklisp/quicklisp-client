@@ -849,7 +849,7 @@ the indexes in the header accordingly."
                          :status-code (status header))))
            (if (and follow-redirects (<= 300 (status header) 399))
                (let ((new-urlstring (ascii-header-value "location" header)))
-                 (when (not new-urlstring)
+                 (unless new-urlstring
                    (error "Redirect code ~D received, but no Location: header"
                           (status header)))
                  (incf redirect-count)
