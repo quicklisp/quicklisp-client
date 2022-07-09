@@ -80,8 +80,7 @@
        ,@(mapcar (lambda (case)
                    (destructuring-bind (keys &rest body)
                        case
-                     `(,(if (eql keys t)
-                            t
+                     `(,(or (eql keys t)
                             (convert-case-keys keys))
                         ,@body)))
                  cases))))
