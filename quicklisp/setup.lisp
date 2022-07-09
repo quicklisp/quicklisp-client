@@ -16,7 +16,7 @@
                (unless system
                  (error "Unknown system ~S" name))
                (ensure-installed system)
-               (mapcar #'recurse (required-systems system))
+               (mapc #'recurse (required-systems system))
                name)))
     (with-consistent-dists
       (recurse name))))
