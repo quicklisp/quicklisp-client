@@ -322,11 +322,11 @@
 
 (defun full-proxy-path (host port path)
   (format nil "~:[http~;https~]://~A~:[:~D~;~*~]~A"
-          (eql port 443)
+          (= port 443)
           host
           (or (null port)
-              (eql port 80)
-              (eql port 443))
+              (= port 80)
+              (= port 443))
           port
           path))
 
