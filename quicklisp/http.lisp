@@ -112,23 +112,23 @@
     (with-slots (pattern pos)
         matcher
       (loop
-       (cond ((= pos match-end)
-              (let ((match-start (- i pos)))
-                (setf pos 0)
-                (setf (matchedp matcher) t)
-                (return (values match-start (+ match-start match-end)))))
-             ((= i end)
-              (return nil))
-             ((= (aref pattern pos)
-                 (aref input i))
-              (incf i)
-              (incf pos))
-             (t
-              (if error
-                  (error 'match-failure)
-                  (if (zerop pos)
-                      (incf i)
-                      (setf pos 0)))))))))
+        (cond ((= pos match-end)
+               (let ((match-start (- i pos)))
+                 (setf pos 0)
+                 (setf (matchedp matcher) t)
+                 (return (values match-start (+ match-start match-end)))))
+              ((= i end)
+               (return nil))
+              ((= (aref pattern pos)
+                  (aref input i))
+               (incf i)
+               (incf pos))
+              (error
+               (error 'match-failure))
+              ((zerop pos)
+               (incf i))
+              (t
+               (setf pos 0)))))))
 
 (defun ascii-matcher (string)
   (make-instance 'matcher
