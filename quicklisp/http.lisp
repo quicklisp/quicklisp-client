@@ -226,7 +226,8 @@
     (call-processor fun cbuf (start cbuf) (end cbuf))))
 
 (defun multi-cmatch (matchers cbuf)
-  (let (start end)
+  (let ((start nil)
+        (end nil))
     (dolist (matcher matchers (values start end))
       (multiple-value-bind (s e)
           (match matcher (data cbuf)
