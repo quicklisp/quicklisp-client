@@ -49,10 +49,10 @@
 
 (defun local-project-system-files (pathname)
   "Return a list of system files under PATHNAME."
-  (let* ((files (matching-directory-files pathname
-                                          (lambda (file)
-                                            (equalp (pathname-type file)
-                                                    "asd")))))
+  (let ((files (matching-directory-files pathname
+                                         (lambda (file)
+                                           (equalp (pathname-type file)
+                                                   "asd")))))
     (setf files (sort files
                       #'string<
                       :key #'namestring))
