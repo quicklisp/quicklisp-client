@@ -319,12 +319,12 @@ quicklisp at CL startup."
     (ql-ccl:delete-directory pathname)))
 
 (defimplementation (delete-directory-tree :qualifier :around) (pathname)
-  (if (directoryp pathname)
-      (call-next-method)
-      (progn
-        (warn "delete-directory-tree - not a directory, ~
-               deleting anyway -- ~s" pathname)
-        (delete-file pathname))))
+  (cond ((directoryp pathname)
+         (call-next-method))
+        (t
+         (warn "delete-directory-tree - not a directory, ~
+                deleting anyway -- ~s" pathname)
+         (delete-file pathname))))
 
 (defun map-directory-tree (directory fun)
   "Call FUN for every file in directory and all its subdirectories,
