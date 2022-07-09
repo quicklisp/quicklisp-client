@@ -99,7 +99,7 @@
                                                exclude-local-projects)
   "Write a list of system file pathnames to OUTPUT-FILE, one per line,
 in order of descending QL-DIST:PREFERENCE."
-  (when (or (eql output-file nil)
+  (when (or (null output-file)
             (eql output-file t))
     (setf output-file (qmerge "manifest.txt")))
   (with-open-file (stream output-file
