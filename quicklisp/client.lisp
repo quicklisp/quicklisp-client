@@ -34,7 +34,8 @@
         (setf systems (list systems)))
       (dolist (thing systems systems)
         (flet ((ql ()
-                 (autoload-system-and-dependencies thing :prompt prompt)))
+                 (autoload-system-and-dependencies (name thing)
+                                                   :prompt prompt)))
           (tagbody :start
              (restart-case (if verbose
                                (ql)

@@ -382,6 +382,12 @@
 (defmethod system ((name string))
   (find-system (string-downcase name)))
 
+(defmethod name ((string string))
+  string)
+
+(defmethod name ((symbol symbol))
+  (symbol-name symbol))
+
 ;;;
 ;;; Dists
 ;;;
