@@ -83,8 +83,7 @@
        ,@(mapcar (lambda (case)
                    (destructuring-bind (keys &rest body)
                        case
-                     `(,(if (eql keys t)
-                            t
+                     `(,(or (eql keys t)
                             (convert-case-keys keys))
                         ,@body)))
                  cases))))
@@ -115,23 +114,23 @@
     (with-slots (pattern pos)
         matcher
       (loop
-       (cond ((= pos match-end)
-              (let ((match-start (- i pos)))
-                (setf pos 0)
-                (setf (matchedp matcher) t)
-                (return (values match-start (+ match-start match-end)))))
-             ((= i end)
-              (return nil))
-             ((= (aref pattern pos)
-                 (aref input i))
-              (incf i)
-              (incf pos))
-             (t
-              (if error
-                  (error 'match-failure)
-                  (if (zerop pos)
-                      (incf i)
-                      (setf pos 0)))))))))
+        (cond ((= pos match-end)
+               (let ((match-start (- i pos)))
+                 (setf pos 0)
+                 (setf (matchedp matcher) t)
+                 (return (values match-start (+ match-start match-end)))))
+              ((= i end)
+               (return nil))
+              ((= (aref pattern pos)
+                  (aref input i))
+               (incf i)
+               (incf pos))
+              (error
+               (error 'match-failure))
+              ((zerop pos)
+               (incf i))
+              (t
+               (setf pos 0)))))))
 
 (defun ascii-matcher (string)
   (make-instance 'matcher
@@ -229,7 +228,8 @@
     (call-processor fun cbuf (start cbuf) (end cbuf))))
 
 (defun multi-cmatch (matchers cbuf)
-  (let (start end)
+  (let ((start nil)
+        (end nil))
     (dolist (matcher matchers (values start end))
       (multiple-value-bind (s e)
           (match matcher (data cbuf)
@@ -328,8 +328,8 @@
           (eql port 443)
           host
           (or (null port)
-              (eql port 80)
-              (eql port 443))
+              (= port 80)
+              (= port 443))
           port
           path))
 
@@ -852,7 +852,7 @@ the indexes in the header accordingly."
                          :status-code (status header))))
            (if (and follow-redirects (<= 300 (status header) 399))
                (let ((new-urlstring (ascii-header-value "location" header)))
-                 (when (not new-urlstring)
+                 (unless new-urlstring
                    (error "Redirect code ~D received, but no Location: header"
                           (status header)))
                  (incf redirect-count)

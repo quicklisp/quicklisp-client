@@ -130,7 +130,7 @@
   closes the connection afterwareds via CLOSE-CONNECTION in an
   unwind-protect. See also WITH-CONNECTION.")
   (:implementation t
-    (let (connection)
+    (let ((connection nil))
       (unwind-protect
            (progn
              (setf connection (open-connection host port))

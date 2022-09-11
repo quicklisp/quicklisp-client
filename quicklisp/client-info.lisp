@@ -219,11 +219,11 @@
 
 (defun local-client-info ()
   (let ((info-file (qmerge "client-info.sexp")))
-    (if (probe-file info-file)
-        (load-client-info info-file)
-        (progn
-          (warn "Missing client-info.sexp, using mock info")
-          (mock-client-info)))))
+    (cond ((probe-file info-file)
+           (load-client-info info-file))
+          (t
+           (warn "Missing client-info.sexp, using mock info")
+           (mock-client-info)))))
 
 (defun newest-client-info (&optional (info (local-client-info)))
   (let ((latest (subscription-url info)))
