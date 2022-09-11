@@ -52,6 +52,7 @@
            #:cormanlisp
            #:ecl
            #:gcl
+	   #:genera
            #:lispworks
            #:mezzano
            #:mkcl

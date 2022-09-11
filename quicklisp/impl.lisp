@@ -307,3 +307,17 @@
                   #:host-ent-address
                   #:socket-connect
                   #:socket-make-stream))
+
+;;; Genera
+
+(define-implementation-package :genera #:ql-genera
+  (:documentation "Genera - https://github.com/SymbolicsGenera/IssuesAndWiki")
+  (:class genera)
+  (:reexport-from #:scl
+                  #:send)
+  (:reexport-from #:fs
+		  #:delete-directory
+                  #:directory-list
+                  #:file-properties)
+  (:reexport-from #:tcp
+                  #:open-tcp-stream))

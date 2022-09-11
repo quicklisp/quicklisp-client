@@ -80,6 +80,8 @@
     ".cmucl-init.lisp")
   (:implementation scl
     ".scl-init.lisp")
+  (:implementation genera
+    "lispm-init.lisp")
   )
 
 (defun init-file-name-for (&optional implementation-designator)
@@ -174,7 +176,9 @@ quicklisp at CL startup."
   (:implementation t
     (file-write-date pathname))
   (:implementation clisp
-    (nth-value 2 (ql-clisp:probe-pathname pathname))))
+    (nth-value 2 (ql-clisp:probe-pathname pathname)))
+  (:implementation genera
+    (file-write-date (ql-genera:send pathname :directory-pathname-as-file))))
 
 
 ;;;
@@ -195,7 +199,12 @@ quicklisp at CL startup."
   (:implementation allegro
     (ql-allegro:file-directory-p entry :follow-symbolic-links nil))
   (:implementation lispworks
-    (ql-lispworks:file-directory-p entry)))
+    (ql-lispworks:file-directory-p entry))
+  (:implementation genera
+    (let ((path (if (call-next-method)
+		    (scl:send entry :directory-pathname-as-file)
+		    entry)))
+      (getf (cdr (ql-genera:file-properties path)) ':directory))))
 
 (definterface directory-entries (directory)
   (:documentation "Return all directory entries of DIRECTORY as a
@@ -247,6 +256,13 @@ quicklisp at CL startup."
                 #+ecl :resolve-symlinks #+ecl nil)
      (directory (merge-pathnames *wild-relative* directory)
                 #+ecl :resolve-symlinks #+ecl nil)))
+  (:implementation genera
+    (let ((entries (ql-genera:directory-list (merge-pathnames *wild-entry* directory))))
+      (loop for (pathname . properties) in (cdr entries)
+	    if (getf properties ':directory)
+	      collect (scl:send pathname :pathname-as-directory)
+	    else
+	      collect pathname)))
   (:implementation mezzano
     (directory (merge-pathnames *wild-entry* directory)))
   (:implementation mkcl
@@ -284,6 +300,8 @@ quicklisp at CL startup."
     (ql-scl:unix-rmdir (ql-scl:unix-namestring entry)))
   (:implementation ecl
     (ql-ecl:rmdir entry))
+  (:implementation genera
+    (ql-genera:delete-directory entry :confirm nil))
   (:implementation mkcl
     (ql-mkcl:rmdir entry))
   (:implementation lispworks

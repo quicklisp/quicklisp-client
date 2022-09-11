@@ -5,8 +5,10 @@
        (*print-pretty* t)
        (*print-escape* nil)
        (prefix (make-string indent :initial-element #\Space)))
-   (pprint-logical-block (nil words :per-line-prefix prefix)
-     (pprint-fill *standard-output* (sort (copy-seq words) #'string<) nil))
+   ;; Genera doesn't implement pprint-logical-block et al...
+   #-genera (pprint-logical-block (nil words :per-line-prefix prefix)
+	      (pprint-fill *standard-output* (sort (copy-seq words) #'string<) nil))
+   #+genera (format *standard-output* "~&~A~{~S ~}~%" prefix (sort (copy-seq words) #'string<))
    (fresh-line)
    (finish-output)))
 
@@ -87,7 +89,7 @@
                    :quicklisp-systems (remove-duplicates quicklisp-systems))))
 
 (defun show-load-strategy (strategy)
-  (format t "To load ~S:~%" (name strategy))
+  (format t "~&To load ~S:~%" (name strategy))
   (let ((asdf-systems (asdf-systems strategy))
         (releases (quicklisp-releases strategy)))
     (when asdf-systems

@@ -24,6 +24,8 @@
          13)
         ((eql char :lf)
          10)
+	((eql char :tab)
+	 9)
         (t
          (let ((code (char-code char)))
            (if (<= 0 code 127)
@@ -32,7 +34,7 @@
                       char))))))
 
 (defvar *whitespace*
-  (list (acode #\Space) (acode #\Tab) (acode :cr) (acode :lf)))
+  (list (acode #\Space) (acode :tab) (acode :cr) (acode :lf)))
 
 (defun whitep (code)
   (member code *whitespace*))
@@ -74,6 +76,7 @@
                         (ecase key
                           (:cr 13)
                           (:lf 10)
+			  (:tab 9)
                           ((t) t)))))
                    (if (consp keys) keys (list keys)))))
     `(case ,value
@@ -550,7 +553,7 @@ the indexes in the header accordingly."
               (return-from process-header header))
              (in-new-line (code)
                (acase code
-                 ((#\Tab #\Space) (setf mark nil) #'in-value)
+                 ((:tab #\Space) (setf mark nil) #'in-value)
                  (t
                   (when mark
                     (save mark value-ends))
@@ -569,7 +572,7 @@ the indexes in the header accordingly."
                   #'in-value)
                  ((:cr :lf)
                   (finish))
-                 ((#\Tab #\Space)
+                 ((:tab #\Space)
                   (error "Unexpected whitespace in header field name"))
                  (t
                   (unless (<= 0 code 127)
