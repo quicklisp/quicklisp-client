@@ -121,26 +121,28 @@
 (defconstant +crc-32-start-value+ 0
   "Start value for CRC-32 checksums as per RFC 1952.")
 
-(defconstant +crc-32-polynomial+ #xedb88320
-  "CRC-32 Polynomial as per RFC 1952.")
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +crc-32-polynomial+ #xedb88320
+    "CRC-32 Polynomial as per RFC 1952."))
 
 (declaim (ftype #-lispworks (function () (simple-array (unsigned-byte 32) (256)))
                 #+lispworks (function () (sys:simple-int32-vector 256))
                 generate-crc32-table))
-(defun generate-crc32-table ()
-  (let ((result #-lispworks (make-array 256 :element-type '(unsigned-byte 32))
-                #+lispworks (sys:make-simple-int32-vector 256)))
-    (dotimes (i #-lispworks (length result) #+lispworks 256 result)
-      (let ((cur i))
-        (dotimes (k 8)
-          (setq cur (if (= 1 (logand cur 1))
-                        (logxor (ash cur -1) +crc-32-polynomial+)
-                        (ash cur -1))))
-        #-lispworks (setf (aref result i) cur)
-        #+lispworks (setf (sys:int32-aref result i)
-                          (sys:integer-to-int32
-                           (dpb (ldb (byte 32 0) cur) (byte 32 0) 
-                                (if (logbitp 31 cur) -1 0))))))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun generate-crc32-table ()
+    (let ((result #-lispworks (make-array 256 :element-type '(unsigned-byte 32))
+                  #+lispworks (sys:make-simple-int32-vector 256)))
+      (dotimes (i #-lispworks (length result) #+lispworks 256 result)
+        (let ((cur i))
+          (dotimes (k 8)
+            (setq cur (if (= 1 (logand cur 1))
+                          (logxor (ash cur -1) +crc-32-polynomial+)
+                          (ash cur -1))))
+          #-lispworks (setf (aref result i) cur)
+          #+lispworks (setf (sys:int32-aref result i)
+                            (sys:integer-to-int32
+                             (dpb (ldb (byte 32 0) cur) (byte 32 0) 
+                                  (if (logbitp 31 cur) -1 0)))))))))
 
 (declaim (ftype 
           (function ((unsigned-byte 32) (simple-array (unsigned-byte 8) (*)) fixnum)
@@ -153,7 +155,7 @@
            (type fixnum end)
            (optimize (speed 3) (debug 0) (space 0) (safety 0))
            #+sbcl (sb-ext:muffle-conditions sb-ext:compiler-note))
-  (let ((table (load-time-value (generate-crc32-table)))
+  (let ((table #.(generate-crc32-table))
         (cur (logxor crc #xffffffff)))
     (declare (type (simple-array (unsigned-byte 32) (256)) table)
              (type (unsigned-byte 32) cur))
@@ -170,7 +172,7 @@
            (type (simple-array (unsigned-byte 8) (*)) buffer)
            (type fixnum end)
            (optimize (speed 3) (debug 0) (space 0) (safety 0) (float 0)))
-  (let ((table (load-time-value (generate-crc32-table)))
+  (let ((table #.(generate-crc32-table))
         (cur (sys:int32-lognot (sys:integer-to-int32 
                                 (dpb (ldb (byte 32 0) crc) (byte 32 0) 
                                      (if (logbitp 31 crc) -1 0))))))
