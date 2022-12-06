@@ -9,12 +9,12 @@
 ;;;
 ;;; This works by keeping a cache of system file pathnames in
 ;;; <quicklisp>/local-projects/system-index.txt. Whenever the
-;;; timestamp on the local projects directory is newer than the
+;;; timestamp on a local projects directory is newer than the
 ;;; timestamp on the system index file, the entire tree is re-scanned
 ;;; and cached.
 ;;;
 ;;; This will pick up system files that are created as a result of
-;;; creating new project directory in <quicklisp>/local-projects/,
+;;; creating new project directory in a local projects directory,
 ;;; e.g. unpacking a tarball or zip file, checking out a project from
 ;;; version control, etc. It will NOT pick up a system file that is
 ;;; added sometime later in a subdirectory; for that, the
@@ -33,7 +33,7 @@
 
 (defparameter *local-project-directories*
   (list (qmerge "local-projects/"))
-  "The default local projects directory.")
+  "The default local projects directories.")
 
 (defun system-index-file (pathname)
   "Return the system index file for the directory PATHNAME."
@@ -102,7 +102,7 @@ SYSTEM, return its full pathname."
 
 (defun local-projects-searcher (system-name)
   "This function is added to ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*
-to use the local project directory and cache to find systems."
+to use the local project directories and cache to find systems."
   (dolist (directory *local-project-directories*)
     (when (probe-directory directory)
       (let ((system-index (ensure-system-index directory)))
@@ -129,7 +129,7 @@ to use the local project directory and cache to find systems."
                                           result))))))))))
 
 (defun register-local-projects ()
-  "Force a scan of the local projects directory to create the system
+  "Force a scan of the local projects directories to create the system
 file index."
   (map nil 'make-system-index *local-project-directories*))
 
