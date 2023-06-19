@@ -202,7 +202,7 @@ quicklisp at CL startup."
     (ql-lispworks:file-directory-p entry))
   (:implementation genera
     (let ((path (if (call-next-method)
-		    (scl:send entry :directory-pathname-as-file)
+		    (ql-genera:send entry :directory-pathname-as-file)
 		    entry)))
       (getf (cdr (ql-genera:file-properties path)) ':directory))))
 
@@ -260,7 +260,7 @@ quicklisp at CL startup."
     (let ((entries (ql-genera:directory-list (merge-pathnames *wild-entry* directory))))
       (loop for (pathname . properties) in (cdr entries)
 	    if (getf properties ':directory)
-	      collect (scl:send pathname :pathname-as-directory)
+	      collect (ql-genera:send pathname :pathname-as-directory)
 	    else
 	      collect pathname)))
   (:implementation mezzano
