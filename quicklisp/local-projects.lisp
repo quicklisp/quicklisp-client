@@ -91,14 +91,19 @@ and has a newer timestamp than PATHNAME."
 (defun find-system-in-index (system index-file)
   "If any system pathname in INDEX-FILE has a pathname-name matching
 SYSTEM, return its full pathname."
-  (with-open-file (stream index-file)
-    (loop for namestring = (read-line stream nil)
-          while namestring
-          when (string= system (pathname-name namestring))
-          return (or (probe-file (merge-pathnames namestring index-file))
-                     ;; If the indexed .asd file doesn't exist anymore
-                     ;; then regenerate the index and restart the search.
-                     (find-system-in-index system (make-system-index (directory-namestring index-file)))))))
+  (multiple-value-bind (file-path match-flag)
+      (with-open-file (stream index-file)
+	(loop for namestring = (read-line stream nil)
+              while namestring
+              when (string= system (pathname-name namestring))
+		return (values (probe-file (merge-pathnames namestring index-file))
+			       t)))
+    ;; If the indexed .asd file doesn't exist anymore
+    ;; then regenerate the index and restart the search.
+    (if (and (not file-path)
+	     match-flag)
+	(find-system-in-index system (make-system-index (uiop:pathname-directory-pathname index-file)))
+	file-path)))
 
 (defun local-projects-searcher (system-name)
   "This function is added to ASDF:*SYSTEM-DEFINITION-SEARCH-FUNCTIONS*
