@@ -113,8 +113,8 @@
     (format stream "~v@T(let ((quicklisp-init ~S))~%"
             indentation
             (quicklisp-init-file-form)))
-  (format stream "~v@T  (when (probe-file quicklisp-init)~%" indentation)
-  (format stream "~v@T    (load quicklisp-init)))~%~%" indentation))
+  (format stream "~v@T  (load quicklisp-init :if-does-not-exist nil))~%" 
+          indentation))
 
 (defun suitable-lisp-init-file (implementation)
   "Return the name of IMPLEMENTATION's init file. If IMPLEMENTAION is
