@@ -119,10 +119,9 @@ compiling asdf.lisp to a FASL and then loading it."
 ;;; ASDF. Thanks to Nikodemus Siivola for pointing out this issue.
 ;;;
 
-(let ((asdf-init (probe-file (qmerge "asdf-config/init.lisp"))))
-  (when asdf-init
-    (with-simple-restart (skip "Skip loading ~S" asdf-init)
-      (load asdf-init :verbose nil :print nil))))
+(let ((asdf-init (qmerge "asdf-config/init.lisp")))
+  (with-simple-restart (skip "Skip loading ~S" asdf-init)
+    (load asdf-init :verbose nil :print nil :if-does-not-exist nil)))
 
 (push (qmerge "quicklisp/") asdf:*central-registry*)
 
