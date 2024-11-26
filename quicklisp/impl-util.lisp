@@ -247,9 +247,20 @@ quicklisp at CL startup."
     (directory (merge-pathnames *wild-entry* directory)
                #+scl :truenamep #+scl nil))
   (:implementation lispworks
-    (directory (merge-pathnames *wild-entry* directory)
+     ;; if the directory is a symlink and link transparency is false
+     ;; then it will have filename components which should be the last
+     ;; element of the directory component.  If that's the case then
+     ;; append them to the directory where they belong.
+     (let ((filename (file-namestring directory)))
+       (directory (merge-pathnames *wild-entry*
+                                   (if (not filename)
+                                       directory
+                                     (make-pathname
+                                      :directory (append (pathname-directory directory)
+                                                         (list filename))
+                                      :defaults directory)))
                #+lispworks :directories #+lispworks t
-               #+lispworks :link-transparency #+lispworks nil))
+               #+lispworks :link-transparency #+lispworks nil)))
   (:implementation ecl
     (nconc
      (directory (merge-pathnames *wild-entry* directory)
