@@ -129,6 +129,13 @@
   (:use #:cl)
   (:export #:gunzip))
 
+(defpackage #:ql-hashes
+  (:documentation
+   "A package for providing required hash functions.")
+  (:use #:cl)
+  (:export #:byte-vector-to-hex-string
+           #:md5sum-file))
+
 (defpackage #:ql-cdb
   (:documentation
    "Read and write CDB files; code adapted from ZCDB.")
@@ -147,7 +154,8 @@
         #:ql-http
         #:ql-setup
         #:ql-gunzipper
-        #:ql-minitar)
+        #:ql-minitar
+        #:ql-hashes)
   (:intern #:dist-version
            #:dist-url)
   (:import-from #:ql-impl-util
@@ -237,6 +245,7 @@
            #:invalid-local-archive-release
            #:missing-local-archive
            #:badly-sized-local-archive
+           #:bad-hash-local-archive
            #:delete-and-retry)
   ;; Systems
   (:export #:dist
