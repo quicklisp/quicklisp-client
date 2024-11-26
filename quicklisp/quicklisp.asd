@@ -22,6 +22,7 @@
                (:file "progress")
                (:file "http")
                (:file "deflate")
+               (:file "md5")
                (:file "minitar")
                (:file "cdb")
                (:file "dist")
