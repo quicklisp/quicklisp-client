@@ -25,10 +25,11 @@
    "Load SYSTEMS the quicklisp way. SYSTEMS is a designator for a list
    of things to be loaded.
 
-   VERBOSE defaults to NIL.
-   SILENT defaults to NIL.
-   PROMPT defaults to NIL.
-   EXPLAIN defaults to T but is not used in the default method.
+   SYSTEMS can be either a string, a keyword symbol, a list of strings or a list of keyword symbols.
+   VERBOSE is boolean and defaults to NIL.
+   SILENT is boolean and defaults to NIL.
+   PROMPT is boolean and defaults to NIL.
+   EXPLAIN is boolean and defaults to T but is not used in the default method.
 
    Examples:
 
