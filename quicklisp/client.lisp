@@ -23,7 +23,34 @@
 (defgeneric quickload (systems &key verbose silent prompt explain &allow-other-keys)
   (:documentation
    "Load SYSTEMS the quicklisp way. SYSTEMS is a designator for a list
-   of things to be loaded.")
+   of things to be loaded.
+
+   VERBOSE defaults to NIL.
+   SILENT defaults to NIL.
+   PROMPT defaults to NIL.
+   EXPLAIN defaults to T but is not used in the default method.
+
+   Examples:
+
+   Load a single SYSTEM like ALEXANDRIA with
+     (ql:quickload \"alexandria\")
+   or
+     (ql:quickload :alexandria)
+
+   Load multiple SYSTEMS like ALEXANDRIA and SERAPEUM with
+     (ql:quickload '(\"alexandria\" \"serapeum\"))
+   or
+     (ql:quickload '(:alexandria :serapeum))
+
+   Load SYSTEMS with verbose compilation (only dots are displayed otherwise to show the progress)
+     (ql:quickload :alexandria :verbose t)
+
+   Load SYSTEMS suppressing output to *STANDARD-OUTPUT*
+     (ql:quickload :alexandria :silent t)
+
+   Load SYSTEMS and get a prompt whether to continue
+     (ql:quickload :alexandria :prompt t)
+")
   (:method (systems &key
             (prompt *quickload-prompt*)
             (silent nil)
