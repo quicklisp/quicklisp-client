@@ -22,39 +22,48 @@
 
 (defgeneric quickload (systems &key verbose silent prompt explain &allow-other-keys)
   (:documentation
-   "Load SYSTEMS the quicklisp way. SYSTEMS is a designator for a list
-   of things to be loaded.
+   "Load SYSTEMS the quicklisp way.
 
-   SYSTEMS can be either
-     - a string,
-     - a keyword symbol, 
-     - a list of strings or
-     - a list of keyword symbols.
-   VERBOSE is boolean and defaults to NIL.
-   SILENT is boolean and defaults to NIL.
-   PROMPT is boolean and defaults to NIL.
-   EXPLAIN is boolean and defaults to T but is not used in the default method.
+    QUICKLOAD will return SYSTEMS.
 
-   Examples:
+    SYSTEMS is a designator for a list of systems to be loaded.
+      It can also be a designator for a single system.
+      A valid designator for a system is either a string or a keyword symbol
 
-   Load a single SYSTEM like ALEXANDRIA with
-     (ql:quickload \"alexandria\")
-   or
-     (ql:quickload :alexandria)
+    The &KEY arguments have the following meanings:
+    :VERBOSE
+      If non-NIL SYSTEMS will be compiled verbose if they weren't compiled before.
+      Otherwise dots are displayed to show compilation progress.
+      The default is NIL.
+    :SILENT
+      If non-NIL writing to *STANDARD-OUTPUT* is prohibited.
+      The default is NIL.
+    :PROMPT
+      If non-NIL the user is prompted to continue loading the SYSTEMS by hitting enter for each system.
+      The default is NIL.
+    :EXPLAIN
+      is not used in the default method.
 
-   Load multiple SYSTEMS like ALEXANDRIA and SERAPEUM with
-     (ql:quickload '(\"alexandria\" \"serapeum\"))
-   or
-     (ql:quickload '(:alexandria :serapeum))
+    Examples:
 
-   Load SYSTEMS with verbose compilation (only dots are displayed otherwise to show the progress)
-     (ql:quickload :alexandria :verbose t)
+    Load a single SYSTEM like ALEXANDRIA with
+      (ql:quickload \"alexandria\")
+    or
+      (ql:quickload :alexandria)
 
-   Load SYSTEMS suppressing output to *STANDARD-OUTPUT*
-     (ql:quickload :alexandria :silent t)
+    Load multiple SYSTEMS like ALEXANDRIA and SERAPEUM with
+      (ql:quickload '(\"alexandria\" \"serapeum\"))
+    or
+      (ql:quickload '(:alexandria :serapeum))
 
-   Load SYSTEMS and get a prompt whether to continue
-     (ql:quickload :alexandria :prompt t)
+    Load SYSTEMS with verbose compilation (only dots are displayed otherwise to show the progress)
+      (ql:quickload :alexandria :verbose t)
+
+    Load SYSTEMS suppressing output to *STANDARD-OUTPUT*
+      (ql:quickload :alexandria :silent t)
+
+    Load SYSTEMS and get a prompt whether to continue
+      (ql:quickload :alexandria :prompt t)
 ")
   (:method (systems &key
             (prompt *quickload-prompt*)
