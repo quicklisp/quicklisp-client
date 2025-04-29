@@ -28,7 +28,7 @@
 
     SYSTEMS is a designator for a list of systems to be loaded.
       It can also be a designator for a single system.
-      A valid designator for a system is either a string or a keyword symbol
+      A valid designator for a system is either a string or a keyword symbol.
 
     The &KEY arguments have the following meanings:
     :VERBOSE
