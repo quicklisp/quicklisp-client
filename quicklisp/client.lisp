@@ -24,11 +24,9 @@
   (:documentation
    "Load SYSTEMS the quicklisp way.
 
-    QUICKLOAD will return SYSTEMS.
-
-    SYSTEMS is a designator for a list of systems to be loaded.
+    SYSTEMS is list of designators for systems to be loaded.
       It can also be a designator for a single system.
-      A valid designator for a system is either a string or a keyword symbol.
+      A valid designator for a system is either a lower case string or a keyword symbol.
 
     The &KEY arguments have the following meanings:
     :VERBOSE
@@ -36,7 +34,7 @@
       Otherwise dots are displayed to show compilation progress.
       The default is NIL.
     :SILENT
-      If non-NIL writing to *STANDARD-OUTPUT* is prohibited.
+      If non-NIL QUICKLOAD doesn't output on *STANDARD-OUTPUT*.
       The default is NIL.
     :PROMPT
       If non-NIL the user is prompted to continue loading the SYSTEMS by hitting enter for each system.
@@ -44,26 +42,7 @@
     :EXPLAIN
       is not used in the default method.
 
-    Examples:
-
-    Load a single SYSTEM like ALEXANDRIA with
-      (ql:quickload \"alexandria\")
-    or
-      (ql:quickload :alexandria)
-
-    Load multiple SYSTEMS like ALEXANDRIA and SERAPEUM with
-      (ql:quickload '(\"alexandria\" \"serapeum\"))
-    or
-      (ql:quickload '(:alexandria :serapeum))
-
-    Load SYSTEMS with verbose compilation (only dots are displayed otherwise to show the progress)
-      (ql:quickload :alexandria :verbose t)
-
-    Load SYSTEMS suppressing output to *STANDARD-OUTPUT*
-      (ql:quickload :alexandria :silent t)
-
-    Load SYSTEMS and get a prompt whether to continue
-      (ql:quickload :alexandria :prompt t)
+    QUICKLOAD will return SYSTEMS.
 ")
   (:method (systems &key
             (prompt *quickload-prompt*)
