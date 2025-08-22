@@ -263,7 +263,6 @@ be (unsigned-byte 8) vectors."
     (write-cdb-u32 (length value) output)
     (write-sequence key output)
     (write-sequence value output)
-    (force-output output)
     (incf (end-of-records-position cdb-writer)
           (+ 8 (length key) (length value)))))
 
@@ -306,7 +305,7 @@ be available."
 cdb file."
   (write-hash-tables cdb-writer)
   (write-pointers cdb-writer)
-  (force-output (output cdb-writer)))
+  (finish-output (output cdb-writer)))
 
 
 (defvar *pointer-padding* (make-array 2048 :element-type '( unsigned-byte 8)))
