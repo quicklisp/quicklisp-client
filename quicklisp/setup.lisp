@@ -42,7 +42,7 @@
             (length (quicklisp-systems strategy)))))
 
 (defgeneric quicklisp-releases (strategy)
-  (:method (strategy)
+  (:method ((strategy load-strategy))
     (remove-duplicates (mapcar 'release (quicklisp-systems strategy)))))
 
 (defgeneric quicklisp-release-table (strategy)

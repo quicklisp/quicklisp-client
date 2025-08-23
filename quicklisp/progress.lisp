@@ -60,13 +60,13 @@
 (defgeneric elapsed-time (progress-bar))
 (defgeneric units-per-second (progress-bar))
 
-(defmethod start-display (progress-bar)
+(defmethod start-display ((progress-bar progress-bar))
   (setf (last-update-time progress-bar) (get-internal-real-time))
   (setf (start-time progress-bar) (get-internal-real-time))
   (fresh-line)
   (finish-output))
 
-(defmethod update-display (progress-bar)
+(defmethod update-display ((progress-bar progress-bar))
   (incf (progress progress-bar) (pending progress-bar))
   (setf (pending progress-bar) 0)
   (setf (last-update-time progress-bar) (get-internal-real-time))
@@ -78,14 +78,14 @@
       (write-char (progress-character progress-bar)))
     (finish-output)))
 
-(defmethod update-progress (progress-bar unit-count)
+(defmethod update-progress ((progress-bar progress-bar) unit-count)
   (incf (pending progress-bar) unit-count)
   (let ((now (get-internal-real-time)))
     (when (< (update-interval progress-bar)
              (- now (last-update-time progress-bar)))
       (update-display progress-bar))))
 
-(defmethod finish-display (progress-bar)
+(defmethod finish-display ((progress-bar progress-bar))
   (update-display progress-bar)
   (setf (end-time progress-bar) (get-internal-real-time))
   (terpri)
@@ -95,11 +95,11 @@
           (/  (units-per-second progress-bar) 1024))
   (finish-output))
 
-(defmethod elapsed-time (progress-bar)
+(defmethod elapsed-time ((progress-bar progress-bar))
   (/ (- (end-time progress-bar) (start-time progress-bar))
      internal-time-units-per-second))
 
-(defmethod units-per-second (progress-bar)
+(defmethod units-per-second ((progress-bar progress-bar))
   (if (plusp (elapsed-time progress-bar))
       (/ (total progress-bar) (elapsed-time progress-bar))
       0))
