@@ -22,8 +22,28 @@
 
 (defgeneric quickload (systems &key verbose silent prompt explain &allow-other-keys)
   (:documentation
-   "Load SYSTEMS the quicklisp way. SYSTEMS is a designator for a list
-   of things to be loaded.")
+   "Load SYSTEMS the quicklisp way.
+
+    SYSTEMS is list of designators for systems to be loaded.
+      It can also be a designator for a single system.
+      A valid designator for a system is either a lower case string or a keyword symbol.
+
+    The &KEY arguments have the following meanings:
+    :VERBOSE
+      If non-NIL SYSTEMS will be compiled verbose if they weren't compiled before.
+      Otherwise dots are displayed to show compilation progress.
+      The default is NIL.
+    :SILENT
+      If non-NIL QUICKLOAD doesn't output on *STANDARD-OUTPUT*.
+      The default is NIL.
+    :PROMPT
+      If non-NIL the user is prompted to continue loading the SYSTEMS by hitting enter for each system.
+      The default is NIL.
+    :EXPLAIN
+      is not used in the default method.
+
+    QUICKLOAD will return SYSTEMS.
+")
   (:method (systems &key
             (prompt *quickload-prompt*)
             (silent nil)
