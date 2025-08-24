@@ -247,9 +247,15 @@ quicklisp at CL startup."
     (directory (merge-pathnames *wild-entry* directory)
                #+scl :truenamep #+scl nil))
   (:implementation lispworks
-    (directory (merge-pathnames *wild-entry* directory)
-               #+lispworks :directories #+lispworks t
-               #+lispworks :link-transparency #+lispworks nil))
+   ;; In LispWorks 8.0 and newer, if the file-namestring of pathname is a symbolic link pointing
+   ;; to a directory and link-transparency is nil, then directory returns it as a file.
+   #-(or lispworks4 lispworks5 lispworks6 lispworks7)
+   (when (hcl:file-link-p directory)
+     (setf directory (make-pathname :directory (append (pathname-directory directory)
+                                                       (list (file-namestring directory))))))
+   (directory (merge-pathnames *wild-entry* directory)
+              #+lispworks :directories #+lispworks t
+              #+lispworks :link-transparency #+lispworks nil))
   (:implementation ecl
     (nconc
      (directory (merge-pathnames *wild-entry* directory)
