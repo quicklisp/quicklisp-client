@@ -840,6 +840,11 @@ the given NAME."
   (setf (slot-value dist 'release-index)
         (make-hash-table :test 'equal)))
 
+(defmethod slot-unbound (class (dist dist) (slot (eql 'canonical-distinfo-url)))
+  (declare (ignore class))
+  (setf (slot-value dist 'canonical-distinfo-url)
+        (distinfo-subscription-url dist)))
+
 
 ;;;
 ;;; Systems
