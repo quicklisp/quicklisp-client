@@ -75,7 +75,9 @@
   (:implementation lispworks
     ".lispworks")
   (:implementation sbcl
-    ".sbclrc")
+    (or (and (find-package :sb-ext)
+             (funcall sb-ext:*userinit-pathname-function*))
+        ".sbclrc"))
   (:implementation cmucl
     ".cmucl-init.lisp")
   (:implementation scl
