@@ -723,6 +723,14 @@ the given NAME."
              (badly-sized-local-archive-expected-size condition)
              (badly-sized-local-archive-actual-size condition)))))
 
+(define-condition corrupt-local-archive (invalid-local-archive)
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for release ~S is corrupt"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))))))
+
 (defmethod check-local-archive-file ((release release))
   (let ((file (local-archive-file release)))
     (unless (probe-file file)
@@ -736,7 +744,15 @@ the given NAME."
                :file file
                :release release
                :actual-size actual-size
-               :expected-size expected-size)))))
+               :expected-size expected-size)))
+    (let ((actual-md5 (ql-md5:md5-file file))
+          (expected-md5 (archive-md5 release)))
+      (unless (string-equal actual-md5 expected-md5)
+        (error 'corrupt-local-archive
+               :file file
+               :release release
+               :actual-md5 actual-md5
+               :expected-md5 expected-md5)))))
 
 (defmethod local-archive-file ((release release))
   (relative-to (dist release)
