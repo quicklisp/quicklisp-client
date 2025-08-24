@@ -723,6 +723,26 @@ the given NAME."
              (badly-sized-local-archive-expected-size condition)
              (badly-sized-local-archive-actual-size condition)))))
 
+(define-condition bad-hash-local-archive (invalid-local-archive)
+  ((hash-type
+    :initarg :hash-type
+    :reader bad-hash-local-archive-hash-type)
+   (expected-hash
+    :initarg :expected-hash
+    :reader bad-hash-local-archive-expected-hash)
+   (actual-hash
+    :initarg :actual-hash
+    :reader bad-hash-local-archive-actual-hash))
+  (:report
+   (lambda (condition stream)
+     (format stream "The archive file ~S for ~S has the wrong ~A hash sum: ~
+                     expected ~S, got ~S"
+             (file-namestring (invalid-local-archive-file condition))
+             (name (invalid-local-archive-release condition))
+             (bad-hash-local-archive-hash-type condition)
+             (bad-hash-local-archive-expected-hash condition)
+             (bad-hash-local-archive-actual-hash condition)))))
+
 (defmethod check-local-archive-file ((release release))
   (let ((file (local-archive-file release)))
     (unless (probe-file file)
@@ -736,7 +756,16 @@ the given NAME."
                :file file
                :release release
                :actual-size actual-size
-               :expected-size expected-size)))))
+               :expected-size expected-size)))
+    (let ((actual-md5 (byte-vector-to-hex-string (md5sum-file file)))
+          (expected-md5 (archive-md5 release)))
+      (unless (string= actual-md5 expected-md5)
+        (error 'bad-hash-local-archive
+               :file file
+               :release release
+               :hash-type "MD5"
+               :actual-hash actual-md5
+               :expected-hash expected-md5)))))
 
 (defmethod local-archive-file ((release release))
   (relative-to (dist release)
