@@ -12,17 +12,6 @@
    (fresh-line)
    (finish-output)))
 
-(defun recursively-install (name)
-  (labels ((recurse (name)
-             (let ((system (find-system name)))
-               (unless system
-                 (error "Unknown system ~S" name))
-               (ensure-installed system)
-               (mapc #'recurse (required-systems system))
-               name)))
-    (with-consistent-dists
-      (recurse name))))
-
 (defclass load-strategy ()
   ((name
     :initarg :name
